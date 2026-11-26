@@ -8,7 +8,7 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 
 ---
 
-## 0. Foundations: split the code (M)
+## 0. Foundations: split the code (M) — DONE 26 Nov 2026
 
 **Why:** All the game logic is in one 124 KB `index.html`, with about 160 functions in a single script. Each later phase (audio, driving, routines, streaming) needs a clean place to live. Without that, every change risks breaking something else.
 
@@ -19,6 +19,8 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 - Make sure the game still runs both from GitHub Pages and as the claude.ai artifact (same files, no build step).
 
 **Done when:** the tester and the core-play checks pass unchanged, and no single file is over about 40 KB apart from the data files and `r3d.js`.
+
+**Result:** the script now lives in ten plain script files under `js/` (core, vehicles, player, world, audio, jobs, crew, ui, render, main), loaded in that order by `index.html`, with the biggest at about 22 KB. They are classic scripts sharing one global scope rather than ES modules, so every debug hook and function name works exactly as before. A deterministic before-and-after run (fixed random numbers and clock, scripted walking, running and a helicopter flight) gave identical positions for every car and pedestrian. Moving to real ES modules can wait until a later phase needs it.
 
 **Scheduled rounds:** update their file list and rules to the new layout once this lands.
 
