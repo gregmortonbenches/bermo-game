@@ -26,3 +26,6 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 ## Preferences
 - Wholesome tone. Story missions and online crew/sharing are parked until Greg says otherwise.
 - Greg judges sound and driving by ear and feel, so say plainly when something is measured but not heard.
+
+## Weather
+Live London weather from Open-Meteo is read in js/life.js (`WX`, `wxNow()`); it falls back to the old date rule if blocked. Test with `DBGWX`, `DBGH` (hour) and `DBGDOW` (day of week).

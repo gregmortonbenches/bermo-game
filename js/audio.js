@@ -56,7 +56,7 @@ function musBtn(){const b=document.getElementById('musB');if(!b)return;b.textCon
 function toggleMusic(){MUS.on=!MUS.on;try{localStorage.setItem('gtab-music',MUS.on?'on':'off')}catch(e){}if(MUS.on)musStart();else musStop();musBtn();toast(MUS.on?'Music on: a bit of gentle jazz.':'Music paused. Tap ♪ to bring it back.')}
 document.getElementById('musB').addEventListener('click',e=>{e.preventDefault();toggleMusic()});musBtn();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(MUS.run)musStop(),MUS.paused=1}else if(MUS.paused){MUS.paused=0;if(started)musStart()}});
-function menuDlg(){dlg('menu',{who:'MENU',title:'YOUR BAG',text:`${esc(bagStr())}<br><br>Cash £${Math.floor(S.cash)} · Tin £${S.fund}/${GOAL} · Kind acts ${S.kind||0}`,opts:[['Route planner',destDlg],[`Music: ${MUS.on?'on':'off'}`,()=>{toggleMusic();menuDlg()}],[`Vibration: ${HAPT.on?'on':'off'}`,()=>{toggleHaptic();menuDlg()}],['Sound levels',mixDlg],['Close',()=>{}]]})}
+function menuDlg(){dlg('menu',{who:'MENU',title:'YOUR BAG',text:`${esc(bagStr())}<br><span style="opacity:.7">${esc(wxLine())}</span><br><br>Cash £${Math.floor(S.cash)} · Tin £${S.fund}/${GOAL} · Kind acts ${S.kind||0}`,opts:[['Route planner',destDlg],[`Music: ${MUS.on?'on':'off'}`,()=>{toggleMusic();menuDlg()}],[`Vibration: ${HAPT.on?'on':'off'}`,()=>{toggleHaptic();menuDlg()}],['Sound levels',mixDlg],['Close',()=>{}]]})}
 
 
 /* ---------- soundscape: engines, footsteps, ambience, surfaces and the mixer (all Web Audio, no audio files) ----------
@@ -120,7 +120,7 @@ function sndScan(p,hr){const z={tr:0,rain:0,wat:0,mur:0};let s=0;for(const c of 
   SND.park=inPoly('green',p.x,p.y);z.tr=Math.min(.04,(SND.park?.002:.004)+.006*s);
   let n=0;for(const r of [25,60])for(let k=0;k<8;k++)if(tAt(p.x+Math.cos(k*.785)*r,p.y+Math.sin(k*.785)*r)==3)n++;
   z.wat=.03*Math.sqrt(n/16);SND.thames=n>0&&hyp(p.x-D.lake[0],p.y-D.lake[1])>180;
-  if(rainy()||window.DBGRAIN)z.rain=.035;
+  if(rainy()||window.DBGRAIN)z.rain=.035*Math.max(.35,Math.min(1,wxNow().rain*1.15));
   let m=0;{const mk=marketsOn(),d=Math.min(mk.maltby&&MALTBY?hyp(p.x-MALTBY.x,p.y-MALTBY.y):9e9,mk.blue?hyp(p.x-D.real.bluemkt[2],p.y-D.real.bluemkt[3]):9e9);if(d<120)m=.02*Math.pow(1-d/120,.8)}
   if(hr>=17||hr<1){for(const sh of D.shops){if(sh[4]!='pub'&&sh[4]!='bar')continue;const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<45)m=Math.max(m,.014*(1-d/45))}}
   z.mur=m;SND.z=z;SND.hr=hr;

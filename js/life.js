@@ -25,6 +25,32 @@ function crowdTarget(){const{h,wk}=lifeNow();let n=h<5?7:h<7?12:h<9.5?(wk?18:36)
 /* and how many cars are on the move */
 function trafficTarget(){const{h,wk}=lifeNow();return Math.round(h<5?7:h<7?12:h<9.5?(wk?14:30):h<16?(wk?24:22):h<19?(wk?22:32):h<22?18:h<24?12:7)}
 
+
+/* ---- weather: live London conditions from Open-Meteo (free, no key). Falls back to the old date-based rain if the request is blocked or fails. ----
+   WX.rain 0..1 (intensity), cloud 0..1, fog 0..1, wet = it has rained in the last few hours. Tests can set window.DBGWX={rain,cloud,fog,wet}. */
+const WX={rain:0,cloud:.3,fog:0,wet:false,snow:false,temp:null,wind:0,desc:'',src:'none',ts:0};
+function wxFromCode(c){/* [rain, cloud, fog, words] for the WMO codes Open-Meteo uses */
+  const T={0:[0,.08,0,'clear'],1:[0,.25,0,'mostly clear'],2:[0,.55,0,'partly cloudy'],3:[0,.92,0,'overcast'],45:[0,.95,.8,'foggy'],48:[0,.95,.9,'freezing fog'],51:[.25,.9,0,'light drizzle'],53:[.4,.92,0,'drizzle'],55:[.55,.95,0,'heavy drizzle'],56:[.4,.92,0,'freezing drizzle'],57:[.55,.95,0,'freezing drizzle'],
+   61:[.45,.92,0,'light rain'],63:[.7,.95,0,'rain'],65:[1,1,0,'heavy rain'],66:[.7,.95,0,'freezing rain'],67:[1,1,0,'freezing rain'],71:[.3,.95,0,'light snow'],73:[.5,.95,0,'snow'],75:[.7,1,0,'heavy snow'],77:[.3,.95,0,'snow grains'],
+   80:[.5,.85,0,'showers'],81:[.75,.92,0,'heavy showers'],82:[1,1,0,'violent showers'],85:[.4,.9,0,'snow showers'],86:[.7,.95,0,'snow showers'],95:[.9,1,0,'thunderstorm'],96:[1,1,0,'thunderstorm'],99:[1,1,0,'thunderstorm']};
+  return T[c]||[0,.4,0,'']}
+function wxApply(j){try{const c=j.current,[r,cl,fg,w]=wxFromCode(c.weather_code);WX.rain=Math.max(r,Math.min(1,(c.precipitation||0)/4));WX.cloud=Math.max(cl*.6,(c.cloud_cover||0)/100)*(r>0?1:1);if(r>0)WX.cloud=Math.max(WX.cloud,cl);
+  const vis=c.visibility;WX.fog=Math.max(fg,typeof vis=='number'&&vis<2000?Math.min(.85,(2000-vis)/1800):0);WX.temp=Math.round(c.temperature_2m);WX.wind=c.wind_speed_10m||0;WX.desc=w;WX.snow=c.weather_code>=71&&c.weather_code<=77||c.weather_code==85||c.weather_code==86;
+  const h=(j.hourly&&j.hourly.precipitation)||[];WX.wet=WX.rain>.1||h.reduce((a,b)=>a+(b||0),0)>.3;WX.src='live';WX.ts=Date.now();return true}catch(e){return false}}
+function wxFallback(){const r=new Date().getDate()%3==0;WX.rain=r?.6:0;WX.cloud=r?.9:.3;WX.fog=0;WX.wet=r;WX.snow=false;WX.temp=null;WX.desc=r?'rain':'';WX.src='date'}
+async function wxLoad(){
+  try{const c=JSON.parse(localStorage.getItem('gtab-wx')||'null');if(c&&Date.now()-c.t<20*60e3&&wxApply(c.j))return}catch(e){}
+  try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),3500);
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.499&longitude=-0.073&current=temperature_2m,precipitation,weather_code,cloud_cover,wind_speed_10m,visibility&hourly=precipitation&past_hours=3&forecast_hours=1&timezone=Europe%2FLondon',{signal:ac.signal});clearTimeout(to);
+    const j=await r.json();if(wxApply(j)){try{localStorage.setItem('gtab-wx',JSON.stringify({t:Date.now(),j}))}catch(e){}return}}catch(e){}
+  try{const c=JSON.parse(localStorage.getItem('gtab-wx')||'null');if(c&&Date.now()-c.t<6*3600e3&&wxApply(c.j)){WX.src='old';return}}catch(e){}
+  if(WX.src=='none')wxFallback()}
+const WXREADY=wxLoad();setInterval(()=>wxLoad(),15*60e3);
+/* what the renderer and sound read each frame (DBGWX overrides for tests) */
+function wxNow(){return window.DBGWX?Object.assign({},WX,window.DBGWX):WX}
+const rainy=()=>wxNow().rain>.1;
+function wxLine(){const w=wxNow();return w.src=='live'||w.src=='old'?'London: '+(w.temp!=null?w.temp+'°C, ':'')+(w.desc||'dry')+(w.src=='old'?' (a bit old)':''):'Weather: guessing (no live feed)'}
+
 /* ---- daily routines: the school run and the commute ----
    Real schools and stations come from the building data (type 'school' / 'train_station'). Weekdays only; schools skip the holidays. */
 let LSITES=null;

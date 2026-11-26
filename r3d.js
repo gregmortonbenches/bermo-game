@@ -160,6 +160,7 @@ const cen=P=>[P.reduce((a,p)=>a+p[0],0)/P.length,P.reduce((a,p)=>a+p[1],0)/P.len
 function override(nm,P){if(nm=='St James')return'jchurch';if(nm=='Anchor Brewhouse')return'ware';{const [cx,cz]=cen(P);if(hyp(cx-778*K,cz-1842*K)<3)return'alaska'}if(nm=='Kagyu Samye Dzong London')return'lib';if(nm=='Fashion and Textile Museum')return'ftm';if(nm=='St Mary Magdalen')return'church';if(WARES.has(nm))return'ware';
   const [cx,cz]=cen(P);if(MANZEB&&hyp(cx-MANZEB[0],cz-MANZEB[1])<.01)return'red';if(SHADSEG&&segD(cx,cz,SHADSEG)<20)return'ware';return null}
 function build(WD){
+  initWet();
   /* Harris Academy Bermondsey (Southwark Park Road): the school blocks are three to four storeys; one OSM block came through at 33 m and rendered as a glass tower */
   for(const b of WD.b){if(b[5]!=='school'||b[1]<=16)continue;const f=b[0];let x=0,y=0;for(let i=0;i<f.length;i+=2){x+=f[i];y+=f[i+1]}x/=f.length/2;y/=f.length/2;if(x>1230&&x<1420&&y>1960&&y<2070)b[1]=15.5}
   const onRoadPx=(x,y)=>{const t=tAt(x,y);return t==1||t==7};
@@ -988,20 +989,20 @@ const AMB=[[0,[20,24,48]],[5.5,[30,34,64]],[7,[200,170,180]],[8.5,[184,200,220]]
 function skyCol(){const d=new Date(),h=window.DBGH!=null?DBGH:d.getHours()+d.getMinutes()/60;for(let i=1;i<AMB.length;i++)if(h<=AMB[i][0]){const [h0,a]=AMB[i-1],[h1,b]=AMB[i],t=(h-h0)/(h1-h0);return[a.map((v,k)=>v+(b[k]-v)*t),h]}return[AMB[0][1],h]}
 const PL=[];for(let i=0;i<8;i++){const l=new THREE.PointLight(0xffb060,0,26,1.6);scene.add(l);PL.push(l)}
 let NIGHT=0;
-const WETM=[];let WETENV=null;/* rainy days: wet road surfaces (darker, glossy, reflecting the overcast sky) */
-if(new Date().getDate()%3==0){const env=ctex(256,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#5a6676');gr.addColorStop(.4,'#9aa4b0');gr.addColorStop(.5,'#7a8290');gr.addColorStop(.62,'#3a3e44');gr.addColorStop(1,'#2a2c30');g.fillStyle=gr;g.fillRect(0,0,w,h)},false);env.mapping=THREE.EquirectangularReflectionMapping;WETENV=env;
+const WETM=[];let WETENV=null;/* wet road surfaces (darker, glossy, reflecting the overcast sky): built at load when it is raining or has just rained */
+function initWet(){if(!wxNow().wet)return;const env=ctex(256,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#5a6676');gr.addColorStop(.4,'#9aa4b0');gr.addColorStop(.5,'#7a8290');gr.addColorStop(.62,'#3a3e44');gr.addColorStop(1,'#2a2c30');g.fillStyle=gr;g.fillRect(0,0,w,h)},false);env.mapping=THREE.EquirectangularReflectionMapping;WETENV=env;
   for(const k of ['road','cobble','cyc']){const o=MAT[k];if(!o)continue;const n=new THREE.MeshPhongMaterial({map:o.map,color:o.color.clone().multiplyScalar(.78),specular:0x2a3038,shininess:70,envMap:env,combine:THREE.MixOperation,reflectivity:k=='cobble'?.1:.17,side:o.side,polygonOffset:o.polygonOffset,polygonOffsetFactor:o.polygonOffsetFactor,polygonOffsetUnits:o.polygonOffsetUnits});n.userData.r0=n.reflectivity;WETM.push(n);MAT[k]=n}}
 /* gradient sky dome: zenith colour fading to a horizon that matches the fog exactly */
 const SKYU={top:{value:new THREE.Color()},bot:{value:new THREE.Color()}};const SKYM=new THREE.Mesh(new THREE.SphereGeometry(950,24,12),new THREE.ShaderMaterial({uniforms:SKYU,side:THREE.BackSide,depthWrite:false,fog:false,toneMapped:false,
   vertexShader:'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:'uniform vec3 top;uniform vec3 bot;varying vec3 vP;void main(){float t=pow(clamp(vP.y,0.,1.),.55);gl_FragColor=vec4(mix(bot,top,t),1.);\n#include <colorspace_fragment>\n}'}));SKYM.renderOrder=-10;SKYM.frustumCulled=false;scene.add(SKYM);
-let SUNLOW=0;function lighting(cx,cz){const [c,h]=skyCol(),col=new THREE.Color().setRGB(c[0]/255,c[1]/255,c[2]/255,THREE.SRGBColorSpace),lum=(c[0]*.3+c[1]*.5+c[2]*.2)/255,night=cl(1-lum*1.7,0,1);NIGHT=night;SUNLOW=cl((h-15.8)/2.2,0,1)*(1-night);/* golden hour: the sun drops low in the west and the light warms up */
-  scene.background=col;scene.fog.color.copy(col);SKYU.bot.value.copy(col);SKYU.top.value.copy(col).lerp(new THREE.Color().setRGB(...(night>.5?[.03,.04,.09]:RAINY?[.42,.47,.53]:[.32,.5,.78]),THREE.SRGBColorSpace),night>.5?.7:.6);SKYM.position.copy(camera.position);hemi.intensity=(.3+lum*.8)*(RAINY?1.45:1.15)+night*1.15;hemi.color.copy(col).lerp(new THREE.Color(0xa8c0e0),.55-SUNLOW*.12)/* golden hour: warm key, cooler fill, so the ground isn't one orange-brown */;sun.intensity=Math.max(.08+night*.3,lum*(RAINY?1.15:1.75));/* a bit more moonlight so lawns and forecourts don't go black */sun.color.set(h>16.5&&h<19.2?0xffb070:night>.5?0x8090c0:0xffe6c4);if(SUNLOW>0){sun.intensity*=1+SUNLOW*.55;hemi.intensity*=1+SUNLOW*.25}
+const OVG=new THREE.Color(.5,.54,.6);let SUNLOW=0,OV=0;function lighting(cx,cz){const WXN=wxNow();OV=Math.min(1,Math.max(WXN.rain,Math.max(0,WXN.cloud-.45)*1.4));const [c,h]=skyCol(),col=new THREE.Color().setRGB(c[0]/255,c[1]/255,c[2]/255,THREE.SRGBColorSpace),lum=(c[0]*.3+c[1]*.5+c[2]*.2)/255,night=cl(1-lum*1.7,0,1);NIGHT=night;SUNLOW=cl((h-15.8)/2.2,0,1)*(1-night);/* golden hour: the sun drops low in the west and the light warms up */
+  col.lerp(OVG,OV*(1-night)*.6);scene.background=col;scene.fog.color.copy(col);SKYU.bot.value.copy(col);SKYU.top.value.copy(col).lerp(new THREE.Color().setRGB(...(night>.5?[.03,.04,.09]:[.32+.1*OV,.5-.03*OV,.78-.25*OV]),THREE.SRGBColorSpace),night>.5?.7:.6);SKYM.position.copy(camera.position);hemi.intensity=(.3+lum*.8)*(1.15+.3*OV)+night*1.15;hemi.color.copy(col).lerp(new THREE.Color(0xa8c0e0),.55-SUNLOW*.12)/* golden hour: warm key, cooler fill, so the ground isn't one orange-brown */;sun.intensity=Math.max(.08+night*.3,lum*(1.75-.6*OV));/* a bit more moonlight so lawns and forecourts don't go black */sun.color.set(h>16.5&&h<19.2?0xffb070:night>.5?0x8090c0:0xffe6c4);if(SUNLOW>0){sun.intensity*=1+SUNLOW*.55;hemi.intensity*=1+SUNLOW*.25}
   for(const k of WK)WM[k].emissiveIntensity=night*.9;MAT.lampOn.emissiveIntensity=night*2.2;for(const m of WETM)m.reflectivity=m.userData.r0*(1-night*.75);if(LAMP_POOL){LAMP_POOL.opacity=night*.42;LAMP_POOL.userData.mesh.visible=night>.05}MAT.hl.emissiveIntensity=.3+night;LIGHTMAT.opacity=.35+night*.65;for(const k of ['grass','lawn'])if(MAT[k]&&MAT[k].emissive){MAT[k].emissive.setRGB(.011,.024,.018);MAT[k].emissiveIntensity=night}/* moonlit lawns: a faint green-blue lift so grass away from lamps doesn't go pitch black */
   const near=LAMPS.map(l=>[hyp(l[0]-cx,l[1]-cz),l]).sort((a,b)=>a[0]-b[0]).slice(0,8);PL.forEach((l,i)=>{const n=near[i];l.intensity=n?night*30:0;if(n)l.position.set(n[1][0],5.6,n[1][1])});
-  for(const u of HAZE)u.hz.value.copy(col);scene.fog.near=night>.5?40:90;scene.fog.far=night>.5?260:420}
-const RAINY=new Date().getDate()%3==0;let rain=null;
-if(RAINY){const n=mob?900:1600,g=new THREE.BufferGeometry(),p=new Float32Array(n*6);for(let i=0;i<n;i++){const x=(R()-.5)*60,y=R()*30,z=(R()-.5)*60;p.set([x,y,z,x-.1,y-.8,z],i*6)}g.setAttribute('position',new THREE.BufferAttribute(p,3));rain=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xb8c4d8,transparent:true,opacity:.22}));rain.frustumCulled=false;scene.add(rain)}
+  for(const u of HAZE)u.hz.value.copy(col);{const fg=WXN.fog||0;scene.fog.near=(night>.5?40:90)*(1-.85*fg)+OV*0;scene.fog.far=(night>.5?260:420)*(1-.65*fg)*(1-.12*OV)}}
+let rain=null;
+function makeRain(){const n=mob?900:1600,g=new THREE.BufferGeometry(),p=new Float32Array(n*6);for(let i=0;i<n;i++){const x=(R()-.5)*60,y=R()*30,z=(R()-.5)*60;p.set([x,y,z,x-.1,y-.8,z],i*6)}g.setAttribute('position',new THREE.BufferAttribute(p,3));rain=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xb8c4d8,transparent:true,opacity:.22}));rain.frustumCulled=false;rain.userData.n=n;scene.add(rain)}
 
 /* ---------- per-frame sync ---------- */
 const ENT=new Map();let seen=new Set();
@@ -1047,6 +1048,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   sun.position.set(px-60-SUNLOW*50,120-SUNLOW*62,pz-40+SUNLOW*22);sun.target.position.set(px,0,pz);
   if((lastLight-=dt)<=0){lastLight=.3;lighting(px,pz)}
   if(WATERM){waterT.offset.set(tSec*.01,tSec*.004);pondT.offset.set(tSec*.004,tSec*.002)}BELMAT.emissiveIntensity=(tSec%1)<.5?1.1:.05;BELMAT2.emissiveIntensity=(tSec*3%1)<.5?1.4:.05;
+  {const rr=wxNow().rain;if(rr>.05&&!rain)makeRain();if(rain){rain.visible=rr>.05;rain.material.opacity=.16+.2*rr;rain.geometry.setDrawRange(0,2*Math.round(rain.userData.n*(.2+.8*rr)))}}
   if(rain){rain.position.set(px,0,pz);const a=rain.geometry.attributes.position.array;for(let i=0;i<a.length;i+=6){a[i+1]-=dt*22;a[i+4]-=dt*22;if(a[i+4]<0){const y=25+R()*5;a[i+1]=y;a[i+4]=y-.8}}rain.geometry.attributes.position.needsUpdate=true}
   if(started){
     // Danny

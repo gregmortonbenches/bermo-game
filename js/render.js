@@ -118,7 +118,7 @@ const GLOW={};
 function glow(col){if(GLOW[col])return GLOW[col];const [c,q]=cnv(64,64),g=q.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,col);g.addColorStop(.35,col.replace(/[\d.]+\)$/,'0.45)'));g.addColorStop(1,col.replace(/[\d.]+\)$/,'0)'));q.fillStyle=g;q.fillRect(0,0,64,64);return GLOW[col]=c}
 const AMB=[[0,[58,70,128]],[5,[66,76,134]],[6.5,[170,150,190]],[8,[255,250,244]],[16,[255,248,236]],[17.2,[255,206,160]],[18.3,[176,150,196]],[19.5,[74,84,142]],[24,[58,70,128]]];
 function ambient(){const d=new Date(),h=d.getHours()+d.getMinutes()/60;for(let i=1;i<AMB.length;i++)if(h<=AMB[i][0]){const [h0,a]=AMB[i-1],[h1,b]=AMB[i],t=(h-h0)/(h1-h0);return a.map((v,k)=>Math.round(v+(b[k]-v)*t))}return AMB[0][1]}
-const rainy=()=>new Date().getDate()%3==0;
+
 const drops=[];for(let i=0;i<110;i++)drops.push({x:R(),y:R(),s:.012+R()*.01,l:4+R()*5});
 function draw(dtf){document.body.classList.toggle('big',!!(bigMap&&started));if(!ready||!window.R3)return;
   if(bigMap&&started){drawBig(pos());return}
