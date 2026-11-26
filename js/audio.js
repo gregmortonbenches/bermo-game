@@ -87,7 +87,8 @@ function sndInit(a){if(SND.ok)return;const B=sndBus(a),nb=a.createBuffer(1,a.sam
   /* helicopter rotor: low noise chopped by a slow oscillator whose rate follows the rotor */
   const r=vc('lowpass',380,.7,B.sfx),am=a.createGain();am.gain.value=.5;r.g.disconnect();r.g.connect(am);am.connect(B.sfx);r.am=am;r.lfo=lfo(8,.5,am.gain);SND.rot=r;
   SND.v={skid:vc('bandpass',2300,4,B.sfx),tr:vc('lowpass',340,.6,B.amb),rain:vc('highpass',1100,.5,B.amb),wat:vc('lowpass',520,.6,B.amb),mur:vc('bandpass',700,.9,B.amb)};
-  lfo(.35,.012,SND.v.wat.g.gain);lfo(2.7,.4,SND.v.mur.g.gain);SND.ok=true}
+  /* slow wobble goes through its own gain stage so it only shapes the sound and can never make it audible by itself */
+  const wob=(v,hz,base,depth)=>{v.f.disconnect();const md=a.createGain();md.gain.value=base;v.f.connect(md);md.connect(v.g);lfo(hz,depth,md.gain)};wob(SND.v.wat,.35,.75,.25);wob(SND.v.mur,2.7,.65,.35);SND.ok=true}
 /* where is the ground green, paved or cobbled? */
 function pip(f,x,y){let ins=false;const n=f.length;for(let i=0,j=n-2;i<n;j=i,i+=2){const xi=f[i],yi=f[i+1],xj=f[j],yj=f[j+1];if((yi>y)!=(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)ins=!ins}return ins}
 function inPoly(k,x,y){let L=SND.cache[k];if(!L)L=SND.cache[k]=((WD&&WD[k])||[]).map(f=>{let a=1e9,b=1e9,c=-1e9,d=-1e9;for(let i=0;i<f.length;i+=2){a=Math.min(a,f[i]);b=Math.min(b,f[i+1]);c=Math.max(c,f[i]);d=Math.max(d,f[i+1])}return{f,a,b,c,d}});
