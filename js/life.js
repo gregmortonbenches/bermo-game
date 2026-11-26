@@ -84,3 +84,8 @@ function routineMove(q,f){const r=q.rt,dx=r.tx-q.x,dy=r.ty-q.y,d=hyp(dx,dy);if(d
   const want=Math.atan2(dy,dx),sp=(q.fast?.062:r.slow?.045:.05)*f;
   for(const o of [0,.45,-.45,.9,-.9,1.5,-1.5]){const a=want+o,nx=q.x+Math.cos(a)*sp,ny=q.y+Math.sin(a)*sp;if(walkable(tAt(nx,ny))&&!hit(nx,ny,2)&&!hitW(nx,ny)){q.x=nx;q.y=ny;q.a+=Math.atan2(Math.sin(a-q.a),Math.cos(a-q.a))*Math.min(1,.25*f);q.walk+=f;r.stuck=0;return false}}
   r.stuck+=f;return r.stuck>240}
+
+/* seasons and dog walkers */
+const xmasOn=()=>!!window.DBGXMAS||(()=>{const d=new Date(),m=d.getMonth(),n=d.getDate();return m==11||(m==0&&n<=5)})();
+/* more people have a dog out first thing and at the end of the working day */
+function dogChance(){const h=lifeNow().h;return(h>=6.5&&h<9)||(h>=16&&h<19.5)?.5:.3}

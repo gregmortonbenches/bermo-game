@@ -96,7 +96,7 @@ function inPoly(k,x,y){let L=SND.cache[k];if(!L)L=SND.cache[k]=((WD&&WD[k])||[])
 function sndSurf(x,y){if(inPoly('green',x,y))return'grass';const sh=SND.cache.shad||(SND.cache.shad=D.anchors.find(a=>a[0]=='Shad Thames')||[0,-9e4,-9e4]);
   if((MALTBY&&hyp(x-MALTBY.x,y-MALTBY.y)<70)||hyp(x-sh[1],y-sh[2])<90)return'cobble';return inPoly('plaza',x,y)?'plaza':'path'}
 /* one-shot effects */
-function sfxStep(run){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,sf=sndSurf(pl.x,pl.y),k=.4*(run?1.2:1)*(.8+Math.random()*.4);
+function sfxStep(run){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,sf=sndSurf(pl.x,pl.y),k=.18*(run?1.2:1)*(.8+Math.random()*.4);
   if(sf=='grass'){nz(a,.11,'lowpass',650+Math.random()*200,.6,.028*k,B.sfx,t);nz(a,.09,'highpass',3200,.5,.005*k,B.sfx,t+.01)}
   else if(sf=='cobble'){nz(a,.05,'bandpass',1100+Math.random()*300,1.8,.035*k,B.sfx,t);tone(a,'triangle',230+Math.random()*60,150,.06,.01*k,B.sfx,t)}
   else if(sf=='plaza'){nz(a,.06,'bandpass',1400+Math.random()*300,1.2,.03*k,B.sfx,t);nz(a,.07,'lowpass',500,.5,.012*k,B.sfx,t)}

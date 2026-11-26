@@ -14,7 +14,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 - Global `G` is the game's grid. Never shadow it.
 - `startGame()` opens an intro dialog that pauses the game; call `closeDlg()` in tests.
 - Tile codes: 0 pavement, 1/7 road, 2 building, 3 water, 5/6 grass/plaza. Walkable = 0, 5, 6.
-- `rainy()` is true when day-of-month % 3 == 0. Tests: fix the Date, use `DBGRAIN`, `DBGH`, `DBGCAM`.
+- Weather: see the Weather section. Tests: fix the Date, use `DBGWX`, `DBGRAIN`, `DBGH`, `DBGDOW`, `DBGCAM`.
 - Sound is procedural Web Audio: music/sfx/amb buses with trims into a limiter. Driving numbers sit in `DRV_TUNE` (vehicles.js). Keep new sounds quiet; measure with `sndRms()`.
 - Headless swiftshader timings are not representative of phones.
 
