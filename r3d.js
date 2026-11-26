@@ -108,10 +108,13 @@ const MAT={rail:M2({map:railT,transparent:true,alphaTest:.5}),cyc:M2({color:0x56
   lampOn:M({color:0x333333,emissive:0xffc070,emissiveIntensity:0}),hl:M({color:0xfff4c8,emissive:0xfff0c0,emissiveIntensity:.3}),tl:M({color:0xc01818,emissive:0xff2020,emissiveIntensity:.4})};
 
 /* ---------- geometry builders ---------- */
-const GB=()=>({p:[],n:[],u:[],c:[]});let TINT=[1,1,1];
+// Geometry collectors: plain JS arrays cost 8 bytes a number and peaked near 640 MB on phones; these keep 4 bytes in a growing Float32Array.
+class FA{constructor(){this.a=new Float32Array(4096);this.length=0}push(...v){const n=v.length;if(this.length+n>this.a.length){const b=new Float32Array(Math.max(this.a.length*2,this.length+n));b.set(this.a.subarray(0,this.length));this.a=b}const a=this.a;let l=this.length;for(let i=0;i<n;i++)a[l++]=v[i];this.length=l;return l}done(){return this.a.subarray(0,this.length)}}
+const F32=x=>x&&x.done?x.done():x;
+const GB=()=>({p:new FA,n:new FA,u:new FA,c:new FA});let TINT=[1,1,1];
 function tri(G,a,b,c,n,ua,ub,uc){G.p.push(...a,...b,...c);G.n.push(...n,...n,...n);G.u.push(...ua,...ub,...uc);G.c.push(...TINT,...TINT,...TINT)}
 function quad(G,a,b,c,d,n,u0,u1,v0,v1){tri(G,a,b,c,n,[u0,v0],[u1,v0],[u1,v1]);tri(G,a,c,d,n,[u0,v0],[u1,v1],[u0,v1])}
-function mesh(G,mat,shadow=true,recv=true){if(!G.p.length)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(G.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(G.n,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(G.u,2));if(mat.vertexColors&&G.c.length==G.p.length)g.setAttribute('color',new THREE.Float32BufferAttribute(G.c,3));g.computeBoundingSphere();const m=new THREE.Mesh(g,mat);m.castShadow=shadow;m.receiveShadow=recv;m.matrixAutoUpdate=false;scene.add(m);return m}
+function mesh(G,mat,shadow=true,recv=true){if(!G.p.length)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(G.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(G.n),3));g.setAttribute('uv',new THREE.Float32BufferAttribute(F32(G.u),2));if(mat.vertexColors&&G.c.length==G.p.length)g.setAttribute('color',new THREE.Float32BufferAttribute(F32(G.c),3));g.computeBoundingSphere();const m=new THREE.Mesh(g,mat);m.castShadow=shadow;m.receiveShadow=recv;m.matrixAutoUpdate=false;scene.add(m);return m}
 const pl2=f=>{const o=[];for(let i=0;i<f.length;i+=2)o.push([f[i]*K,f[i+1]*K]);return o};
 function inPoly(x,z,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,zi]=P[i],[xj,zj]=P[j];if((zi>z)!=(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)c=!c}return c}
 function flat(G,P,y,s){const v=P.map(p=>new THREE.Vector2(p[0],p[1]));let t;try{t=THREE.ShapeUtils.triangulateShape(v,[])}catch(e){return}for(const [a,b,c] of t)tri(G,[P[a][0],y,P[a][1]],[P[c][0],y,P[c][1]],[P[b][0],y,P[b][1]],[0,1,0],[P[a][0]/s,P[a][1]/s],[P[c][0]/s,P[c][1]/s],[P[b][0]/s,P[b][1]/s])}
@@ -121,7 +124,7 @@ function ribbon(G,pts,w,y,us,caps){let acc=0;for(let i=0;i<pts.length-1;i++){con
   if(caps)for(const [x,z] of pts){const r=w/2;for(let k=0;k<10;k++){const a0=k/10*PI*2,a1=(k+1)/10*PI*2,p0=[x+Math.cos(a0)*r,y,z+Math.sin(a0)*r],p1=[x+Math.cos(a1)*r,y,z+Math.sin(a1)*r];tri(G,[x,y,z],p1,p0,[0,1,0],[x/8,z/8],[p1[0]/8,p1[2]/8],[p0[0]/8,p0[2]/8])}}}
 function offsetLine(pts,o){return pts.map((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz)||1;return[p[0]-dz/L*o,p[1]+dx/L*o]})}
 // vertex-coloured boxes and prisms, for vehicles, people and street furniture
-const VB=()=>({p:[],n:[],c:[]});
+const VB=()=>({p:new FA,n:new FA,c:new FA});
 const FACES=[[[1,0,0],[[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1]]],[[-1,0,0],[[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]]],[[0,1,0],[[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1]]],[[0,-1,0],[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]]],[[0,0,1],[[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]],[[0,0,-1],[[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1]]]];
 const _c=new THREE.Color();
 function addBox(V,w,h,d,x,y,z,col,ry=0){_c.set(col);const cs=Math.cos(ry),sn=Math.sin(ry),T=(px,py,pz)=>[x+px*cs+pz*sn,y+py,z-px*sn+pz*cs],N=(px,py,pz)=>[px*cs+pz*sn,py,-px*sn+pz*cs];
@@ -136,7 +139,7 @@ function addWheel(V,r,w,x,y,z,col){_c.set(col);const S=8;for(let i=0;i<S;i++){co
 function addCyl(V,r,h,x,y0,z,col,S=10){_c.set(col);for(let i=0;i<S;i++){const a0=i/S*PI*2,a1=(i+1)/S*PI*2,P0=[x+Math.cos(a0)*r,0,z+Math.sin(a0)*r],P1=[x+Math.cos(a1)*r,0,z+Math.sin(a1)*r],n=[Math.cos((a0+a1)/2),0,Math.sin((a0+a1)/2)];
   const q=[[P0[0],y0,P0[2]],[P1[0],y0,P1[2]],[P1[0],y0+h,P1[2]],[P0[0],y0+h,P0[2]]];for(const k of [0,2,1,0,3,2]){V.p.push(...q[k]);V.n.push(...n);V.c.push(_c.r,_c.g,_c.b)}
   for(const v of [[x,y0+h,z],[P1[0],y0+h,P1[2]],[P0[0],y0+h,P0[2]]]){V.p.push(...v);V.n.push(0,1,0);V.c.push(_c.r,_c.g,_c.b)}}}
-function vgeo(V){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(V.n,3));g.setAttribute('color',new THREE.Float32BufferAttribute(V.c,3));g.computeBoundingSphere();return g}
+function vgeo(V){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(V.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(V.n),3));g.setAttribute('color',new THREE.Float32BufferAttribute(F32(V.c),3));g.computeBoundingSphere();return g}
 function vmesh(V,shadow=true){const m=new THREE.Mesh(vgeo(V),MAT.vc);m.castShadow=shadow;m.receiveShadow=true;return m}
 
 /* ---------- static world ---------- */
@@ -368,7 +371,7 @@ function build(WD){
    if(MLY){for(const z of MLY.zebra)avoid.push([z[0],z[1],16]);for(const z of MLY.sig)avoid.push([z[0],z[1],16])}for(const b of D.furn.bus||[])avoid.push([b[0],b[1],20]);
    const AV={};for(const a of avoid){const k=Math.floor(a[0]/40)+','+Math.floor(a[1]/40);(AV[k]=AV[k]||[]).push(a)}
    const near=(x,y)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const L=AV[(Math.floor(x/40)+i)+','+(Math.floor(y/40)+j)];if(L)for(const a of L)if(hyp(a[0]-x,a[1]-y)<a[2])return true}return false};
-   const cg=(()=>{const V=VB(),L=VB();modernCar(V,L,4.25,1.82,'#ffffff','hatch');for(let k=0;k<L.p.length/3;k++){V.p.push(L.p[k*3],L.p[k*3+1],L.p[k*3+2]);V.n.push(L.n[k*3],L.n[k*3+1],L.n[k*3+2]);V.c.push(L.c[k*3]*.6,L.c[k*3+1]*.3,L.c[k*3+2]*.3)}const g=vgeo(V);g.userData.shared=1;return g})();
+   const cg=(()=>{const V=VB(),L=VB();modernCar(V,L,4.25,1.82,'#ffffff','hatch');for(let k=0;k<L.p.length/3;k++){V.p.push(L.p.a[k*3],L.p.a[k*3+1],L.p.a[k*3+2]);V.n.push(L.n.a[k*3],L.n.a[k*3+1],L.n.a[k*3+2]);V.c.push(L.c.a[k*3]*.6,L.c.a[k*3+1]*.3,L.c.a[k*3+2]*.3)}const g=vgeo(V);g.userData.shared=1;return g})();
    const CC=['#2a2c30','#7c8188','#9aa0a6','#c9ccd0','#f4f4f2','#f4f4f2','#1e2a4a','#2e4a7a','#7a1e22','#5e6e5a','#3a4048','#b8b2a6','#1a1a1e'];const PK={};let np=0;const cmat=new THREE.MeshLambertMaterial({vertexColors:true});
    // keep parked cars out of the lanes the traffic actually drives in
    const LG=new Map();for(const e of EDGES){for(const fw of[true,false]){if(!okDir(e,fw))continue;const off=laneOff(e);for(let q=0;q<=e.len;q+=3){const [x,y,hx,hy]=edgePos(e,q,fw),lx=x+hy*off,ly=y-hx*off,k=(lx>>3)+','+(ly>>3);if(!LG.has(k))LG.set(k,[]);LG.get(k).push(lx,ly)}}}
@@ -542,7 +545,7 @@ function build(WD){
    for(let i=0;i<4;i++){const a=cr[i],b=cr[(i+1)%4],l=hyp(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/l,dz=(b[1]-a[1])/l;let segs=i==0?[[0,l/2-.7],[l/2+.7,l]]:[[0,l]];
      for(const [s0,s1] of segs){quad(FG,[a[0]+dx*s0,0,a[1]+dz*s0],[a[0]+dx*s1,0,a[1]+dz*s1],[a[0]+dx*s1,3.2,a[1]+dz*s1],[a[0]+dx*s0,3.2,a[1]+dz*s0],[-dz,0,dx],0,1,0,1);for(let t=s0;t<=s1+.01;t+=3){const x=a[0]+dx*Math.min(t,s1),z=a[1]+dz*Math.min(t,s1),V=fv(x,z);addBox(V,.08,3.3,.08,x,1.65,z,'#2a4a2e')}
        for(let t=s0;t<=s1;t+=.4){const px=((a[0]+dx*t)/K)|0,py=((a[1]+dz*t)/K)|0;if(px>=0&&py>=0&&px<W&&py<H)FB[py*W+px]=1}}}
-   const fmsh=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(FG.p,3)).setAttribute('normal',new THREE.Float32BufferAttribute(FG.n,3)),fm);scene.add(fmsh)}
+   const fmsh=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(F32(FG.p),3)).setAttribute('normal',new THREE.Float32BufferAttribute(F32(FG.n),3)),fm);scene.add(fmsh)}
   // notable places: shopfronts, pub fronts and brand fascias on the real buildings, from photos
   if(WD.fronts){const pip=(x,z,Q)=>{let c=false;for(let i=0,j=Q.length-1;i<Q.length;j=i++){const [xi,zi]=Q[i],[xj,zj]=Q[j];if((zi>z)!=(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)c=!c}return c};let nfr=0;
    for(const [nm,px,py,bid,fc,fa,tx,tc,wd,fl,xc] of WD.fronts){const b=WD.b[bid];if(!b)continue;const Q=pl2(b[0]),X=px*K,Z=py*K;let best=null;
@@ -931,7 +934,7 @@ function vehGeo(type,col){const key=type+col;if(VCACHE.has(key))return VCACHE.ge
       if(type=='bike')addBox(V,.9,.62,.8,.45,.66,0,'#1f6a64');if(type=='courier')addBox(V,.46,.46,.46,-.55,1.25,0,'#2bb3a0');if(type=='ebike')addBox(V,.36,.16,.18,-.2,.5,0,'#222')}
     addBox(L,.06,.1,.12,(type=='bike'?1:.6)+.05,1,0,'#fff')}
   const r={g:vgeo(V),l:L.p.length?lgeo(L):null,len};r.g.userData.shared=1;if(r.l)r.l.userData.shared=1;VCACHE.set(key,r);return r}
-function lgeo(L){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(L.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(L.n,3));g.setAttribute('color',new THREE.Float32BufferAttribute(L.c,3));return g}
+function lgeo(L){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(L.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(L.n),3));g.setAttribute('color',new THREE.Float32BufferAttribute(F32(L.c),3));return g}
 const LIGHTMAT=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.35,fog:true});
 const XMAT=new THREE.MeshBasicMaterial({vertexColors:true,fog:true});/* Christmas lights: dim by day, bright at night */
 function vehMesh(c){const vg=vehGeo(c.type,c.col||'#c0392b'),g=new THREE.Group(),m=new THREE.Mesh(vg.g,MAT.vc);m.castShadow=true;m.receiveShadow=true;g.add(m);if(vg.l){const l=new THREE.Mesh(vg.l,LIGHTMAT);g.add(l)}
@@ -1110,7 +1113,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   const t=started&&act?act.tg:null;if(t){beacon=beacon||beaconMesh(0xffb85c);beacon.visible=true;beacon.position.set(t.x*K,20,t.y*K)}else if(beacon)beacon.visible=false;
   if(started&&dest){destBeacon=destBeacon||beaconMesh(0xff6fa5);destBeacon.visible=true;destBeacon.position.set(dest.x*K,20,dest.y*K)}else if(destBeacon)destBeacon.visible=false;
   // route ribbon
-  if(route!==routeRef){routeRef=route;if(routeM){scene.remove(routeM);routeM.geometry.dispose()}routeM=null;if(route&&route.length>1){const G=GB();ribbon(G,route.map(q=>[q[0]*K,q[1]*K]),1.1,.14,0,true);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(G.p,3));routeM=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:dest?0xff6fa5:0xffb85c,transparent:true,opacity:.75,depthWrite:false,...PO(-6)}));scene.add(routeM)}}
+  if(route!==routeRef){routeRef=route;if(routeM){scene.remove(routeM);routeM.geometry.dispose()}routeM=null;if(route&&route.length>1){const G=GB();ribbon(G,route.map(q=>[q[0]*K,q[1]*K]),1.1,.14,0,true);const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(G.p),3));routeM=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:dest?0xff6fa5:0xffb85c,transparent:true,opacity:.75,depthWrite:false,...PO(-6)}));scene.add(routeM)}}
   // particles
   for(let i=parts.length-1;i>=0;i--){const q=parts[i];if(!PICON[q.type]){parts.splice(i,1);continue}q.l-=f;q.h=(q.h||2)+.018*f;q.x+=q.vx*f*.15;q.y+=q.vx*f*.1;if(q.l<=0){parts.splice(i,1);continue}const m=ent(q,()=>pinSprite(...PICON[q.type]));m.position.set(q.x*K,q.h,q.y*K);const s=.45*Math.min(1,q.l/30);m.scale.set(s,s,1)}
   // remove anything no longer in the game

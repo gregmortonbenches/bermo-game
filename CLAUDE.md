@@ -17,6 +17,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 - Weather: see the Weather section. Tests: fix the Date, use `DBGWX`, `DBGRAIN`, `DBGH`, `DBGDOW`, `DBGCAM`.
 - Sound is procedural Web Audio: music/sfx/amb buses with trims into a limiter. Driving numbers sit in `DRV_TUNE` (vehicles.js). Keep new sounds quiet; measure with `sndRms()`.
 - Headless swiftshader timings are not representative of phones.
+- Memory: iPhones kill the tab around 1 GB. Geometry builders (`GB()`/`VB()` in r3d.js) store into growing Float32Arrays (`FA`), never plain JS arrays; pass them to three.js with `F32(x.p)`. Check load memory with CDP `Performance.getMetrics` (JSHeapTotalSize); it was 1312 MB peak with plain arrays and is about 109 MB now.
 
 ## Publish routine
 1. Test with Playwright (chromium at /opt/pw-browsers/chromium-1243/chrome-linux64/chrome, flags `--use-gl=swiftshader --enable-unsafe-swiftshader`).
