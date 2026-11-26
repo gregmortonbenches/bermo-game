@@ -9,10 +9,13 @@ let D,MAP,G,TCOLS=13,TROWS=11,W=1,H=1,C=3,GW=1,GH=1,EDGES=[],ADJ=[],MAIN=[],SEGB
 const GOAL=2000;
 const tAt=(x,y)=>{const cx=Math.floor(x/C),cy=Math.floor(y/C);return cx<0||cy<0||cx>=GW||cy>=GH?3:G[cy*GW+cx]};
 const sol=t=>t==2||t==3||t==4;
-let FB=null,WD=null;const CAM={yaw:0,pitch:.3,manual:0,rx:0,ry:0};
+let FB=null,FLOW=null,WD=null;const CAM={yaw:0,pitch:.3,manual:0,rx:0,ry:0};
 const solP=(x,y)=>{const t=tAt(x,y);if(t==3||(t==4&&!(window.UP&&window.UP[(y|0)*W+(x|0)])))return true;if(FB){const X=x|0,Y=y|0;return X<0||Y<0||X>=W||Y>=H||FB[Y*W+X]===1}return t==2};
 const hit=(x,y,r)=>solP(x-r,y-r)||solP(x+r,y-r)||solP(x-r,y+r)||solP(x+r,y+r);
 const hitW=(x,y)=>hit(x,y,1)||solP(x,y)||solP(x-1,y)||solP(x+1,y)||solP(x,y-1)||solP(x,y+1);/* on foot: also test centre and edge midpoints so 1px fences/corners can't be slipped through */
+/* low fences (garden walls and railings, up to about 1.3 m) can be jumped; FLOW marks the cells that are only a low fence */
+const solPJ=(x,y)=>{if(FLOW&&FLOW[(y|0)*W+(x|0)]===1){const t=tAt(x,y);if(t!=2&&t!=3&&t!=4)return false}return solP(x,y)};
+const hitJ=(x,y)=>solPJ(x-1,y-1)||solPJ(x+1,y-1)||solPJ(x-1,y+1)||solPJ(x+1,y+1)||solPJ(x,y)||solPJ(x-1,y)||solPJ(x+1,y)||solPJ(x,y-1)||solPJ(x,y+1);
 const TYPES={hatch:{w:15,h:8,max:.45,acc:.012,n:'hatchback'},cab:{w:16,h:8,max:.44,acc:.012,n:'black cab'},van:{w:18,h:9,max:.38,acc:.01,n:'van'},bike:{w:10,h:5,max:.24,acc:.016,n:'e-cargo bike'},bus:{w:26,h:10,max:.3,acc:.007,n:'bus'},scooter:{w:7,h:3,max:.235,acc:.015,n:'e-scooter'},ebike:{w:8,h:4,max:.27,acc:.016,n:'e-bike'},courier:{w:9,h:5,max:.22,acc:.013,n:'delivery rider'},heli:{w:22,h:9,max:1.3,acc:.014,n:'helicopter'}};
 const SHIRTS=['#e04848','#3a6fd8','#2fa86a','#e0a030','#8a4ad0','#e07a3a','#2a2a34','#d8d8dc','#c04888','#3aa0b0'],HAIRS=['#2a1a12','#4a2c1a','#8a5a2a','#d8b060','#151515','#6a6a70','#a0402a'];
 const COLS=['#7c8188','#f4f4f2','#2a2c30','#2e4a7a','#9aa0a6','#7a1e22','#5e6e5a','#c9ccd0','#1e2a4a','#3a4048','#e85a2a','#2a7a8a'];

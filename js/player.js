@@ -6,7 +6,7 @@ function inVec(){let mx=0,my=0,mag=0;if(joy.m>.15){mx=joy.x/joy.m;my=joy.y/joy.m
   if(!mag)return{x:0,y:0,m:0};const fw=-my,rt=mx,c=Math.cos(CAM.yaw),sn=Math.sin(CAM.yaw);return{x:c*fw-sn*rt,y:sn*fw+c*rt,m:mag}}
 function footStep(f){const v=inVec(),run=K.run||btnB,sp=(run?.175:.1)*v.m*f;
   if(v.m){pl.a+=angDiff(Math.atan2(v.y,v.x),pl.a)*Math.min(1,.3*f);pl.walk+=f}
-  const nx=pl.x+v.x*sp,ny=pl.y+v.y*sp;if(pl.z>0){const ok=(x,y)=>Math.abs(R3.roofAt(x,y)-pl.z)<.6||(heli&&hyp(x-heli.x,y-heli.y)<12);if(ok(nx,pl.y))pl.x=nx;if(ok(pl.x,ny))pl.y=ny;return}if(!hitW(nx,pl.y))pl.x=nx;if(!hitW(pl.x,ny))pl.y=ny}
+  const nx=pl.x+v.x*sp,ny=pl.y+v.y*sp;if(pl.z>0){const ok=(x,y)=>Math.abs(R3.roofAt(x,y)-pl.z)<.6||(heli&&hyp(x-heli.x,y-heli.y)<12);if(ok(nx,pl.y))pl.x=nx;if(ok(pl.x,ny))pl.y=ny;return}const H=pl.jz>.4?hitJ:hitW;if(!H(nx,pl.y))pl.x=nx;if(!H(pl.x,ny))pl.y=ny}
 const TWO={bike:1,ebike:1,scooter:1};
 function twoStep(c,f){const v=inVec(),mag=v.m,T=TYPES[c.type],hb=K.brake||btnB;
   if(mag>0){c.a+=angDiff(Math.atan2(v.y,v.x),c.a)*Math.min(1,.12*f)}

@@ -4,7 +4,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 
 ## Layout
 - `index.html`: page shell, styles, ordered `<script src="js/...">` tags.
-- `js/` classic scripts sharing ONE global scope. Load order: core, vehicles, player, world, audio, life, jobs, crew, ui, render, main.
+- `js/` classic scripts sharing ONE global scope. Load order: core, vehicles, player, world, audio, life, radio, jobs, crew, ui, render, main.
   - Top-level code must not use symbols from later files (functions are fine once called later). `hazard.mjs` checks this.
   - 2D pixel units, 1.3 px = 1 m. r3d.js converts with K = 1/1.3.
 - `r3d.js`: ES module three.js renderer. `world3d.json`, `data.json`, `mly.json`, `grid.png`, `map.png`, `bg.jpg`: data.
@@ -29,3 +29,8 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 
 ## Weather
 Live London weather from Open-Meteo is read in js/life.js (`WX`, `wxNow()`); it falls back to the old date rule if blocked. Test with `DBGWX`, `DBGH` (hour) and `DBGDOW` (day of week).
+
+## Radio and parachute
+- `js/radio.js`: car radio from the Radio Browser directory (BAG menu, T = next station). Plays only in a vehicle, silences the jazz.
+- `js/chute.js`: freefall then automatic parachute (jump out of the helicopter, leap from a roof edge). Low fences (`FLOW` grid in r3d.js, `hitJ` in core.js) can be cleared with a jump.
+- three.js hides an object only when `visible === false`: never set `.visible` to undefined.

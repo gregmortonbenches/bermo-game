@@ -145,3 +145,6 @@ The 6-hourly rounds stay small: bugs, polish and the art backlog. Once a phase i
 **Done when:** two players, one on GitHub Pages and one on claude.ai, can join the same crew and see each other.
 
 ---
+
+# Ongoing (from Greg, 26 Nov 2026)
+Keep improving design, accuracy to the local area, building design, physics and the engine, round by round (the scheduled play-test rounds cover this). Done recently: car radio (Radio Browser, js/radio.js), parachute jumps from the helicopter and rooftops (js/chute.js), jumping over low garden fences, and the fix for the player's avatar staying on the ground when getting into a vehicle (three.js only hides an object when `visible === false`, so always set it with a real boolean).

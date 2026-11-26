@@ -56,7 +56,7 @@ function musBtn(){const b=document.getElementById('musB');if(!b)return;b.textCon
 function toggleMusic(){MUS.on=!MUS.on;try{localStorage.setItem('gtab-music',MUS.on?'on':'off')}catch(e){}if(MUS.on)musStart();else musStop();musBtn();toast(MUS.on?'Music on: a bit of gentle jazz.':'Music paused. Tap ♪ to bring it back.')}
 document.getElementById('musB').addEventListener('click',e=>{e.preventDefault();toggleMusic()});musBtn();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(MUS.run)musStop(),MUS.paused=1}else if(MUS.paused){MUS.paused=0;if(started)musStart()}});
-function menuDlg(){dlg('menu',{who:'MENU',title:'YOUR BAG',text:`${esc(bagStr())}<br><span style="opacity:.7">${esc(wxLine())}</span><br><br>Cash £${Math.floor(S.cash)} · Tin £${S.fund}/${GOAL} · Kind acts ${S.kind||0}`,opts:[['Route planner',destDlg],[`Music: ${MUS.on?'on':'off'}`,()=>{toggleMusic();menuDlg()}],[`Vibration: ${HAPT.on?'on':'off'}`,()=>{toggleHaptic();menuDlg()}],['Sound levels',mixDlg],['Close',()=>{}]]})}
+function menuDlg(){dlg('menu',{who:'MENU',title:'YOUR BAG',text:`${esc(bagStr())}<br><span style="opacity:.7">${esc(wxLine())}</span><br><br>Cash £${Math.floor(S.cash)} · Tin £${S.fund}/${GOAL} · Kind acts ${S.kind||0}`,opts:[['Route planner',destDlg],[`Music: ${MUS.on?'on':'off'}`,()=>{toggleMusic();menuDlg()}],[`Vibration: ${HAPT.on?'on':'off'}`,()=>{toggleHaptic();menuDlg()}],['Sound levels',mixDlg],[radioLabel(),radioDlg],['Close',()=>{}]]})}
 
 
 /* ---------- soundscape: engines, footsteps, ambience, surfaces and the mixer (all Web Audio, no audio files) ----------
@@ -127,7 +127,7 @@ function sndScan(p,hr){const z={tr:0,rain:0,wat:0,mur:0};let s=0;for(const c of 
   const R2=SND.cache.rail||(SND.cache.rail=(()=>{const o=[];for(const l of (WD.rail||[]))for(let i=0;i<l.length;i+=2)o.push(l[i],l[i+1]);return o})());let bd=1e9;for(let i=0;i<R2.length;i+=2){const d=Math.abs(R2[i]-p.x)+Math.abs(R2[i+1]-p.y);if(d<bd)bd=d}SND.railD=bd}
 function sndUpdate(f){try{const a=AC;if(!a)return;if(!SND.ok){sndInit(a);return}const B=SND.bus,now=a.currentTime,on=started&&!paused&&ready&&!document.hidden&&a.state=='running';
   const T=(p,v,tc)=>p.setTargetAtTime(v,now,tc||.08),p=pos(),c=pl.car,ty=c?c.type:'',ct=c?TYPES[ty]:null,v=c?Math.abs(c.v||0):0,r=ct?clamp(v/ct.max,0,1):0,hr=hourNow();
-  T(B.mus.gain,SND.mix.mus*(typeof DL!='undefined'&&DL?.55:1),.3);
+  T(B.mus.gain,SND.mix.mus*(typeof DL!='undefined'&&DL?.55:1)*(radPlaying()?0:1),.3);radTick();
   if(fr%24==0&&started)sndScan(p,hr);
   const light=ty=='bike'||ty=='ebike'||ty=='scooter'||ty=='courier',road=!!c&&ty!='heli'&&!light,e=SND.eng;let eg=0;
   if(on&&c&&ty!='heli'){const cat=light?'light':'road';SND.ecat=cat;

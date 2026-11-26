@@ -166,7 +166,7 @@ function build(WD){
   const onRoadPx=(x,y)=>{const t=tAt(x,y);return t==1||t==7};
   // fine building raster, used for collision and camera
   {const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});g.fillStyle='#000';for(const b of WD.b){const f=b[0];g.beginPath();for(let i=0;i<f.length;i+=2)i?g.lineTo(f[i],f[i+1]):g.moveTo(f[i],f[i+1]);g.closePath();g.fill()}
-   const d=g.getImageData(0,0,W,H).data,fb=new Uint8Array(W*H);for(let i=0;i<fb.length;i++)if(d[i*4+3]>110){const x=i%W,y=(i/W)|0;fb[i]=onRoadPx(x,y)?0:1}FB=fb}
+   const d=g.getImageData(0,0,W,H).data,fb=new Uint8Array(W*H);for(let i=0;i<fb.length;i++)if(d[i*4+3]>110){const x=i%W,y=(i/W)|0;fb[i]=onRoadPx(x,y)?0:1}FB=fb;FLOW=new Uint8Array(W*H)}
   const MW=W*K,MH=H*K;
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(MW+4000,MH+4000),MAT.pave);ground.rotation.x=-PI/2;ground.position.set(MW/2,0,MH/2);paving.repeat.set((MW+4000)/4,(MH+4000)/4);ground.receiveShadow=true;scene.add(ground);
   const tile=(x,z)=>Math.floor(x/360)+","+Math.floor(z/360),buckets={},bk=(m,x,z)=>{const k=m+'|'+tile(x,z);return buckets[k]||(buckets[k]=GB())};
@@ -390,7 +390,7 @@ function build(WD){
      let run=null;const flush=(t1)=>{if(!run)return;const a=run,b=t1;if(b-a>.3){const ax=x0+dx*a+nx*g,az=z0+dz*a+nz*g,bx=x0+dx*b+nx*g,bz=z0+dz*b+nz*g,len=b-a,cx=(ax+bx)/2,cz=(az+bz)/2,ry=Math.atan2(-dz,dx),V=fv(cx,cz);
          addBox(V,len,.6,.28,cx,.3,cz,BRK[wk]||'#a88a5c',ry);addBox(V,len,.06,.32,cx,.62,cz,'#d8d0c0',ry);quad(RG,[ax,.62,az],[bx,.62,bz],[bx,1.32,bz],[ax,1.32,az],[nx,0,nz],0,len/1.1,0,1);
          const hedge=(Math.floor(acc/4)%3)!=1;if(hedge)addBox(V,len,.85,Math.min(.9,g-.3),cx-nx*(Math.min(.9,g-.3)/2+.2),.42,cz-nz*(Math.min(.9,g-.3)/2+.2),['#3f6a32','#4a7a3a','#36602c'][Math.floor(acc)%3],ry);
-         if(ng==1500)R3DBG.gpos=[cx,cz,nx,nz,dx,dz];for(let k=0;k<=len;k+=.5){const px=((ax+(bx-ax)*k/len)/K)|0,py=((az+(bz-az)*k/len)/K)|0;if(px>=0&&py>=0&&px<W&&py<H)FB[py*W+px]=1}ng++}run=null};
+         if(ng==1500)R3DBG.gpos=[cx,cz,nx,nz,dx,dz];for(let k=0;k<=len;k+=.5){const px=((ax+(bx-ax)*k/len)/K)|0,py=((az+(bz-az)*k/len)/K)|0;if(px>=0&&py>=0&&px<W&&py<H){const ii=py*W+px;if(!FB[ii])FLOW[ii]=1;FB[ii]=1}}ng++}run=null};
      ok.forEach((v,i)=>{const t=.25+i*.25;if(v){if(run===null)run=t}else flush(t)});flush(L-.25)}
    mesh(RG,MAT.rail,false);window.R3DBG&&(R3DBG.gardens=ng,R3DBG.parkedSkipped=nLane)}
   // Bermondsey Spa Gardens: low black park railings on a stone kerb, open at every path and gate
@@ -399,7 +399,7 @@ function build(WD){
    for(let i=0;i<Q.length-1;i++){const [x0,z0]=Q[i],[x1,z1]=Q[i+1],L=hyp(x1-x0,z1-z0);if(L<.3)continue;const dx=(x1-x0)/L,dz=(z1-z0)/L,nx=-dz*sg,nz=dx*sg,ins=.35;
      let run=null;const flush=(a,b)=>{if(b-a<.4)return;const ax=x0+dx*a+nx*ins,az=z0+dz*a+nz*ins,bx=x0+dx*b+nx*ins,bz=z0+dz*b+nz*ins,len=b-a,cx=(ax+bx)/2,cz=(az+bz)/2,ry=Math.atan2(-dz,dx),V=fv(cx,cz);
        addBox(V,len,.16,.3,cx,.08,cz,'#b8b4a8',ry);quad(RG2,[ax,.16,az],[bx,.16,bz],[bx,1.05,bz],[ax,1.05,az],[nx,0,nz],0,len/1.1,0,1);addBox(V,len,.05,.07,cx,1.07,cz,'#1c1c1c',ry);
-       for(let k=0;k<=len;k+=.4){const px=((ax+(bx-ax)*k/len)/K)|0,py=((az+(bz-az)*k/len)/K)|0;if(px>=0&&py>=0&&px<W&&py<H)FB[py*W+px]=1}nf+=len};
+       for(let k=0;k<=len;k+=.4){const px=((ax+(bx-ax)*k/len)/K)|0,py=((az+(bz-az)*k/len)/K)|0;if(px>=0&&py>=0&&px<W&&py<H){const ii=py*W+px;if(!FB[ii])FLOW[ii]=1;FB[ii]=1}}nf+=len};
      const gate=(x,z)=>{const V=fv(x,z);addBox(V,.22,1.3,.22,x,.65,z,'#1c1c1c');addBox(V,.3,.1,.3,x,1.34,z,'#1c1c1c')};
      let pn=false;for(let t=0;t<=L;t+=.25){const x=x0+dx*t,z=z0+dz*t,near=G2.some(g=>hyp(g[0]-x,g[1]-z)<1.9),bld=!!FB[((z/K)|0)*W+((x/K)|0)];
        if(near!==pn&&t>0)gate(x+nx*ins,z+nz*ins);pn=near;
@@ -1045,6 +1045,9 @@ function fxStep(dt){if(!FXM)return;let n=0,d=0;for(let i=FXP.length-1;i>=0;i--){
     else{const sc=p.type=='spark'?p.s*fade:p.s;_fm.compose(_fv.set(p.x,p.y,p.z),_fq,_fs.set(sc,p.type=='spark'?sc*.35:sc*.5,sc));FXM.setMatrixAt(n,_fm);FXM.setColorAt(n,_fc.setHex(p.c));n++}}
   FXM.count=n;DUSTM.count=d;FXM.instanceMatrix.needsUpdate=true;DUSTM.instanceMatrix.needsUpdate=true;if(FXM.instanceColor)FXM.instanceColor.needsUpdate=true}
 /* airborne pose for a person (jumping, or leaping out of the way): knees tucked, arms up */
+/* the parachute canopy: striped dome and lines, opening out over about a third of a second */
+let chuteG=null;function chuteCanopy(dt){const c=pl.chute,show=!!(c&&c.open>.02&&dannyM);if(!chuteG){if(!show)return;chuteG=new THREE.Group();const g=new THREE.SphereGeometry(2.4,20,8,0,PI*2,0,PI*.5),col=[],p=g.attributes.position;for(let i=0;i<p.count;i++){const a=Math.atan2(p.getZ(i),p.getX(i)),k=Math.floor((a+PI)/(PI*2)*10)%2;col.push(...(k?[.92,.92,.9]:[.86,.2,.18]))}g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.scale(1,.62,1);const dome=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));dome.position.y=3.6;chuteG.add(dome);const pts=[];for(let k=0;k<8;k++){const a=k/8*PI*2;pts.push(new THREE.Vector3(Math.cos(a)*2.35,3.6,Math.sin(a)*2.35),new THREE.Vector3(0,1.55,0))}chuteG.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x303030})));scene.add(chuteG)}
+  chuteG.visible=show;if(show){const o=c.open;chuteG.position.copy(dannyM.position);chuteG.scale.set(.25+.75*o,.2+.8*o,.25+.75*o);chuteG.rotation.y=-pl.a;chuteG.rotation.z=Math.sin(tSec*1.6)*.05}}
 function airPose(m,jz,flail){const u=m.userData,t=Math.min(1,(jz||0)/.35);if(t<=0)return;u.aL.rotation.x=t*(flail?.7:.35);u.aR.rotation.x=-t*(flail?.7:.35);
   u.lL.rotation.z=u.lL.rotation.z*(1-t)+.55*t;u.lR.rotation.z=u.lR.rotation.z*(1-t)-.1*t;u.lL.userData.k.rotation.z=-1.1*t;u.lR.userData.k.rotation.z=-.7*t;
   const up=flail?2.7+Math.sin(tSec*30)*.3:1.9;u.aL.rotation.z=u.aL.rotation.z*(1-t)+up*t;u.aR.rotation.z=u.aR.rotation.z*(1-t)+(flail?2.7-Math.sin(tSec*30)*.3:1.2)*t;u.aL.userData.e.rotation.z=u.aR.userData.e.rotation.z=.3*t}
@@ -1068,9 +1071,10 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   if(started){
     // Danny
     if(!dannyM){dannyM=personMesh({...DANNY,me:1});scene.add(dannyM)}
-    const two=pl.car&&TWO[pl.car.type];dannyM.visible=!pl.car||two;
+    const two=pl.car&&TWO[pl.car.type];dannyM.visible=!pl.car||!!two;/* strict boolean: three.js only hides an object when visible === false, so undefined left the player standing where they got in */window.R3DBG&&(R3DBG.dannyVis=dannyM.visible,R3DBG.dannyPos=[dannyM.position.x/K,dannyM.position.z/K]);
     if(two){const c=pl.car;dannyM.position.set(c.x*K-Math.cos(c.a)*(c.type=='bike'?.1:.15),c.type=='scooter'?.25:.2,c.y*K-Math.sin(c.a)*(c.type=='bike'?.1:.15));dannyM.rotation.y=-c.a;animPerson(dannyM,0,dt,c.type!='scooter');if(c.type=='scooter')animPerson(dannyM,0,dt)}
     else if(!pl.car){const s=spd(pl,pl.x,pl.y,dt);dannyM.position.set(pl.x*K,(pl.z||0)+(pl.jz||0),pl.y*K);dannyM.rotation.y=-pl.a;animPerson(dannyM,s,dt);airPose(dannyM,pl.jz,false)}
+    chuteCanopy(dt);
     // peds, their dogs, specials
     for(const q of peds){const m=ent(q,()=>personMesh(q)),s=spd(q,q.x,q.y,dt);m.scale.setScalar(q.kid?.78:1);m.position.set(q.x*K,q.jz||0,q.y*K);m.rotation.y=-q.a;animPerson(m,s,dt);airPose(m,q.jz,q.startle>0);
       if(q.dog){const d=q.dog,dm=ent(d,()=>dogMesh(d.col,d.big,d.patch)),ds=spd(d,d.x,d.y,dt);dm.position.set(d.x*K,0,d.y*K);dm.rotation.y=-d.a;animDog(dm,ds,dt,tSec)}

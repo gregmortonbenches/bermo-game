@@ -10,9 +10,9 @@ function maintain(){const p=pos();cars=cars.filter(c=>c.own||c===pl.car||!(!c.ai
 function heliFloor(c){let m=0;for(const [dx,dy] of [[0,0],[6,0],[-6,0],[0,6],[0,-6]])m=Math.max(m,R3.roofAt(c.x+dx,c.y+dy));return m/55}
 /* helicopter flight: the rotor spools up before it lifts, climb and descent ease in and out, it hovers with a gentle bob, touches down softly, keeps its momentum, eases into turns, dips its nose at speed and banks into turns */
 function heliStep(f){if(!heli)return;const h=heli,on=pl.car===h,fl=heliFloor(h);let a=h.alt||0;
-  h.spool=clamp((h.spool||0)+(on?.012:h.landed?-.006:0)*f,0,1);
+  h.spool=clamp((h.spool||0)+(on?.012:-.006)*f,0,1);
   const u=on&&(K.hup||btnU),d=on&&(K.brake||btnB),lift=h.spool>.8;
-  let tv=u&&lift?.0075:d?-.008:0;if(d&&a-fl<.06)tv=-.0028;/* soft touchdown */
+  let tv=u&&lift?.0075:d?-.008:(!on&&!h.landed?-.004:0);if(d&&a-fl<.06)tv=-.0028;/* soft touchdown */
   h.vs=(h.vs||0)+(tv-(h.vs||0))*Math.min(1,.07*f);if(!on&&h.landed)h.vs=0;a+=h.vs*f;
   if(!h.landed&&!u&&!d&&on){h.bob=(h.bob||0)+f*.05;a+=Math.sin(h.bob)*.00018*f}
   h.alt=clamp(Math.max(a,fl),0,1.4);if(h.alt<=fl&&h.vs<0)h.vs=0;h.landed=h.alt-fl<.012;if(h.landed&&!on)h.alt=fl;
@@ -28,7 +28,7 @@ function heliFly(c,thr,steer,f){const T=TYPES.heli;c.vx=c.vx||0;c.vy=c.vy||0;c.y
   c.bank=(c.bank||0)+(clamp(c.yawv*5+(fwd>.2?steer*.08:0),-.35,.35)-(c.bank||0))*Math.min(1,.08*f)}
 let heli=null;
 function ensureHeli(){if(heli&&cars.includes(heli))return;const g=nearWalk(1010,1830);heli=mkParked('heli',g.x,g.y,-.4,'#16181c');heli.own=1;heli.alt=0;cars.push(heli)}
-function step(f,dt){heliStep(f);if(fr%40==0)updateRoute();if(pl.car){carStep(f);pl.jz=0;pl.jv=0}else{jumpStep(f);footStep(f)}pedFeel(f);
+function step(f,dt){heliStep(f);if(fr%40==0)updateRoute();if(pl.car){carStep(f);pl.jz=0;pl.jv=0}else if(pl.chute){chuteStep(f)}else{jumpStep(f);footStep(f)}pedFeel(f);
   for(const c of cars){if(c===pl.car)continue;if(c.spin){c.a+=c.spin*f;c.spin*=Math.pow(.88,f);if(Math.abs(c.spin)<.001)c.spin=0}if(c.ai)aiStep(c,f);else if(Math.abs(c.v)>.004){c.v*=.94;move(c,f)}}
   dogStep(f);worldStep(f);if(fr%30==0)maintain();misUpdate(dt);bumpCD-=dt;shake=Math.max(0,shake-f*.3);if(fr%9==0)syncCrew()}
 function loop(t){requestAnimationFrame(loop);const ms=Math.min(50,t-lt);lt=t;const f=ms/16.67,dt=ms/1000;fr++;
@@ -52,7 +52,7 @@ function toggleMap(){if(!started||DL)return;bigMap=!bigMap;paused=bigMap;if(bigM
 const KM={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ShiftLeft:'run',ShiftRight:'run',Space:'brake',KeyQ:'hup',PageUp:'hup',PageDown:'brake'};
 addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'){if(e.key=='Enter'&&DL)pick(0);if(e.key=='Escape')closeDlg();return}
   if(DL){if(e.code=='ArrowUp'||e.code=='KeyW'){moveSel(-1);e.preventDefault()}else if(e.code=='ArrowDown'||e.code=='KeyS'){moveSel(1);e.preventDefault()}else if(e.code=='KeyE'||e.code=='Enter'||e.code=='Space'){pick(DL.sel);e.preventDefault()}else if(e.code=='Escape'||e.code=='KeyQ')closeDlg();return}
-  if(KM[e.code]){K[KM[e.code]]=1;e.preventDefault()}if(e.code=='KeyE'||e.code=='Enter')aBtn();if(e.code=='KeyB'||e.code=='KeyC')startBtn();if(e.code=='KeyM'||e.code=='Tab'){toggleMap();e.preventDefault()}if(e.code=='Equal'||e.code=='NumpadAdd')bigMap?mapZoom(1.25):setZoom(ZF*1.15);if(e.code=='Minus'||e.code=='NumpadSubtract')bigMap?mapZoom(1/1.25):setZoom(ZF/1.15);if(e.code=='KeyR'&&started&&!DL)destDlg();if(e.code=='KeyN'&&started)toggleMusic()});
+  if(KM[e.code]){K[KM[e.code]]=1;e.preventDefault()}if(e.code=='KeyE'||e.code=='Enter')aBtn();if(e.code=='KeyB'||e.code=='KeyC')startBtn();if(e.code=='KeyM'||e.code=='Tab'){toggleMap();e.preventDefault()}if(e.code=='Equal'||e.code=='NumpadAdd')bigMap?mapZoom(1.25):setZoom(ZF*1.15);if(e.code=='Minus'||e.code=='NumpadSubtract')bigMap?mapZoom(1/1.25):setZoom(ZF/1.15);if(e.code=='KeyR'&&started&&!DL)destDlg();if(e.code=='KeyN'&&started)toggleMusic();if(e.code=='KeyT'&&started&&!DL&&pl.car)radNext()});
 addEventListener('keyup',e=>{if(KM[e.code])K[KM[e.code]]=0});
 addEventListener('blur',()=>{for(const k in K)K[k]=0;btnB=false;btnU=false;btnJ=false;joy={x:0,y:0,m:0}});
 const c3=$('#c3');
