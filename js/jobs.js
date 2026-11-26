@@ -33,7 +33,7 @@ function misUpdate(dt){if(!act)return;act.t-=dt;if(act.t<=0)return failMis(act.k
 
 /* ---------- places and the A button ---------- */
 const nearP=(k,r)=>{const p=pos();return hyp(p.x-P[k].x,p.y-P[k].y)<(r||10)};
-function ctxAct(){if(!ready)return null;if(!pl.car&&pl.z>0){const c=nearOwn();return c?{l:'Borrow the police helicopter',f:()=>enterCar(c)}:null}if(pl.car&&pl.car.type=='heli'&&!pl.car.landed&&(pl.car.alt||0)*55>10)return{l:'Jump out (parachute)',f:()=>startChute((pl.car.alt||0)*55,0,0)};
+function ctxAct(){if(!ready)return null;if(!pl.car&&pl.z>0){const c=nearOwn();return c?{l:'Borrow the police helicopter',f:()=>enterCar(c)}:null}if(pl.car&&pl.car.type=='heli'&&!pl.car.landed&&((pl.car.alt||0)-heliFloor(pl.car))*55>2.5)return{l:'Jump out (parachute)',f:()=>startChute((pl.car.alt||0)*55,0,0)};
   if(pl.car)return{l:pl.car.type=='heli'?(pl.car.landed?'Get out':'Lower down first'):'Get off',f:leaveCar};
   {const g=nearPack();if(g)return{l:pack.follow>0?'Give the pack a fuss':'Say hello to the pack',f:()=>{for(const d of pack.dogs)burst(d.x,d.y,'heart',2);if(pack.follow>0){toast('Belly rubs all round.')}else{toast(['The whole pack wags at once. They tag along for a bit.','Six tails, one opinion: you are great. They follow you.','Sniffs, wags, a happy bark. The pack joins your walk.'][R()*3|0])}pack.follow=60*60}}}
   {const o=nearOwn();if(o&&hyp(o.x-pl.x,o.y-pl.y)<4.5)return{l:o.type=='bike'?'Ride':'Drive',f:()=>enterCar(o)}}
