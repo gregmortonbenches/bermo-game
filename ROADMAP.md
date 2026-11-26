@@ -45,7 +45,7 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 
 ---
 
-## 3. Driving and camera feel (S–M)
+## 3. Driving and camera feel (S–M) — DONE 26 Nov 2026 (first pass)
 
 **Why:** In a GTA III-style game, how the car handles and how the camera follows it make up a lot of the experience.
 
@@ -57,6 +57,8 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 - Expose the tuning numbers in one config object so they're easy to adjust later.
 
 **Done when:** a lap of Jamaica Road → Tower Bridge Road → Southwark Park Road feels good on both keyboard and phone sticks.
+
+**Result:** all the numbers are in one `DRV_TUNE` object at the top of the driving code in `js/vehicles.js`. Steering now eases in over about a tenth of a second (it used to snap instantly) and turns wider the faster you go (turning circle at top speed about 9 m instead of 6.5 m). Launch is snappier and the car eases into top speed instead of hitting a wall. The body leans out of turns and the nose lifts on launch and dips under braking. The camera pulls back, widens its view and looks ahead as speed rises, and lags a little more in fast turns. The sound mix was turned right down after the first version was too loud (effects and ambience now sit well under the music; Bag, then Sound levels, has headroom). It was checked by measurement and screenshots, not by feel, so it needs a proper drive from you. Left alone on purpose: braking is still very sharp (from top speed to a stop in about 2 m), and there is no sideways drift or handbrake turn.
 
 ---
 

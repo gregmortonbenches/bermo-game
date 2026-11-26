@@ -39,8 +39,13 @@ function move(c,f){if(c.type=='heli'){c.x=clamp(c.x+Math.cos(c.a)*c.v*f,10,W-10)
     if(c===pl.car&&!solP(nx+ca*T.w*.45*sg,ny+sa*T.w*.45*sg))for(const k of [.35,-.35,.7,-.7]){const X=nx-sa*k,Y=ny+ca*k,ns=(j)=>solP(X+ca*T.w*.45*sg-sa*j,Y+sa*T.w*.45*sg+ca*j);if(!hit(X,Y,1.1)&&!ns(0)&&!ns(1.1)&&!ns(-1.1)){c.x=X;c.y=Y;c.v*=.97;return true}}
     const kk=Math.abs(c.v)/TYPES[c.type].max;if(c===pl.car&&Math.abs(c.v)>.12)crash(c,kk);c.v=-c.v*(c===pl.car&&kk>.35?.4:.25);return false}
   c.x=nx;c.y=ny;return true}
-function drive(c,thr,steer,hb,f){const T=TYPES[c.type];if(c.type=='heli'){heliFly(c,thr,steer,f);return}c.v+=thr*T.acc*f;if(hb)c.v*=Math.pow(.88,f);c.v*=Math.pow(.985,f);c.v=clamp(c.v,-T.max*.4,T.max);
-  c.a+=steer*.05*f*clamp(c.v/.12,-1,1);if(c.spin){c.a+=c.spin*f;c.spin*=Math.pow(.9,f);if(Math.abs(c.spin)<.001)c.spin=0}move(c,f)}
+/* driving feel numbers in one place */
+const DRV_TUNE={launch:1.3,topEase:.8,steerEase:.28,wideAtSpeed:.3,roll:-.045,pitch:2.5};
+function drive(c,thr,steer,hb,f){const T=TYPES[c.type];if(c.type=='heli'){heliFly(c,thr,steer,f);return}const r=clamp(Math.abs(c.v)/T.max,0,1),v0=c.v;/* snappy launch that eases into top speed; steering eases in and gets wider as you go faster */
+  c.v+=thr*T.acc*f*(thr>0&&c.v>=0?DRV_TUNE.launch-DRV_TUNE.topEase*r*r:1);if(hb)c.v*=Math.pow(.88,f);c.v*=Math.pow(.985,f);c.v=clamp(c.v,-T.max*.4,T.max);
+  c.sw=(c.sw||0)+(steer-(c.sw||0))*Math.min(1,DRV_TUNE.steerEase*f);
+  c.a+=c.sw*.05*(1-DRV_TUNE.wideAtSpeed*r)*f*clamp(c.v/.12,-1,1);
+  c.roll=(c.roll||0)+(c.sw*r*DRV_TUNE.roll-(c.roll||0))*Math.min(1,.15*f);c.pit=(c.pit||0)+(clamp((c.v-v0)/Math.max(f,.01)*DRV_TUNE.pitch,-.05,.05)-(c.pit||0))*Math.min(1,.2*f);if(c.spin){c.a+=c.spin*f;c.spin*=Math.pow(.9,f);if(Math.abs(c.spin)<.001)c.spin=0}move(c,f)}
 function bump(c){for(const o of cars){if(o===c)continue;const dx=o.x-c.x,dy=o.y-c.y,d=hyp(dx,dy),md=(TYPES[c.type].w+TYPES[o.type].w)*.33;
   if(d<md&&d>0){const push=(md-d)/2,ux=dx/d,uy=dy/d;if(!o.ai&&!hit(o.x+ux*push,o.y+uy*push,2)){o.x+=ux*push;o.y+=uy*push}if(!hit(c.x-ux*push,c.y-uy*push,2)){c.x-=ux*push;c.y-=uy*push}
     const tow=(Math.cos(c.a)*ux+Math.sin(c.a)*uy)*Math.sign(c.v||1);if(tow>.3){if(c===pl.car&&Math.abs(c.v)>.2&&!(o.crashT>fr-20)){const k=Math.abs(c.v)/TYPES[c.type].max;crash(c,k,o);const sh=Math.min(6,k*7);if(!hit(o.x+ux*sh,o.y+uy*sh,2)){o.x+=ux*sh;o.y+=uy*sh}}else if(Math.abs(c.v)>.22)oops();c.v*=.5;if(!o.ai)o.v*=.5}}}}

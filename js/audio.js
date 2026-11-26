@@ -61,16 +61,16 @@ function menuDlg(){dlg('menu',{who:'MENU',title:'YOUR BAG',text:`${esc(bagStr())
 
 /* ---------- soundscape: engines, footsteps, ambience, surfaces and the mixer (all Web Audio, no audio files) ----------
    Three buses (music, effects, ambience) go through one limiter. sndUpdate() runs every frame from the loop and never throws. */
-const SND={mix:{mus:1,sfx:1,amb:1},bus:null,ok:false,nb:null,eng:null,rot:null,v:{},nx:{},z:{tr:0,rain:0,wat:0,mur:0},park:false,thames:false,railD:999,hr:12,foot:0,st:0,stn:0,ecat:'',err:null,cache:{}};
+const SND={mix:{mus:1,sfx:.7,amb:.7},trim:{mus:1,sfx:.5,amb:.4},bus:null,ok:false,nb:null,eng:null,rot:null,v:{},nx:{},z:{tr:0,rain:0,wat:0,mur:0},park:false,thames:false,railD:999,hr:12,foot:0,st:0,stn:0,ecat:'',err:null,cache:{}};
 try{const m=JSON.parse(localStorage.getItem('gtab-mix')||'null');if(m)for(const k in SND.mix)if(typeof m[k]=='number')SND.mix[k]=clamp(m[k],0,1)}catch(e){}
 const MIXL=[[1,'full'],[.7,'medium'],[.35,'low'],[0,'off']];
 const mixIdx=v=>{let b=0;MIXL.forEach((m,i)=>{if(Math.abs(m[0]-v)<Math.abs(MIXL[b][0]-v))b=i});return b};
-function mixCycle(k){SND.mix[k]=MIXL[(mixIdx(SND.mix[k])+1)%MIXL.length][0];try{localStorage.setItem('gtab-mix',JSON.stringify(SND.mix))}catch(e){}if(SND.bus&&k!='mus')SND.bus[k].gain.setTargetAtTime(SND.mix[k],AC.currentTime,.05)}
+function mixCycle(k){SND.mix[k]=MIXL[(mixIdx(SND.mix[k])+1)%MIXL.length][0];try{localStorage.setItem('gtab-mix',JSON.stringify(SND.mix))}catch(e){}if(SND.bus&&k!='mus')SND.bus[k].gain.setTargetAtTime(SND.mix[k]*SND.trim[k],AC.currentTime,.05)}
 function mixDlg(){const row=(k,n)=>[`${n}: ${MIXL[mixIdx(SND.mix[k])][1]}`,()=>{mixCycle(k);mixDlg()}];
   dlg('menu',{who:'SOUND',title:'LEVELS',text:'Tap a line to turn it up or down.',opts:[row('mus','Music'),row('sfx','Effects'),row('amb','Ambience'),['Back',menuDlg]]})}
 function sndBus(a){a=a||AC;if(!a)return null;if(SND.bus&&SND.bus.ctx===a)return SND.bus;
   const sum=a.createGain(),lim=a.createDynamicsCompressor(),an=a.createAnalyser();lim.threshold.value=-8;lim.knee.value=6;lim.ratio.value=10;lim.attack.value=.003;lim.release.value=.15;an.fftSize=1024;
-  sum.connect(lim);lim.connect(a.destination);lim.connect(an);const mk=k=>{const g=a.createGain();g.gain.value=SND.mix[k];g.connect(sum);return g};
+  sum.connect(lim);lim.connect(a.destination);lim.connect(an);const mk=k=>{const g=a.createGain();g.gain.value=SND.mix[k]*SND.trim[k];g.connect(sum);return g};
   return SND.bus={ctx:a,sum,an,sfx:mk('sfx'),amb:mk('amb'),mus:mk('mus')}}
 function sndRms(){const B=SND.bus;if(!B)return 0;const d=new Float32Array(B.an.fftSize);B.an.getFloatTimeDomainData(d);let s=0,pk=0;for(const x of d){s+=x*x;pk=Math.max(pk,Math.abs(x))}return{rms:Math.sqrt(s/d.length),peak:pk}}
 const sA=()=>{const a=sfxCtx();if(!a)return null;if(!SND.ok)sndInit(a);return SND.ok?a:null};
@@ -82,11 +82,11 @@ function sndInit(a){if(SND.ok)return;const B=sndBus(a),nb=a.createBuffer(1,a.sam
   const vc=(ft,fr,q,bus)=>{const s=a.createBufferSource();s.buffer=nb;s.loop=true;s.start(0,Math.random()*1.5);const f=a.createBiquadFilter();f.type=ft;f.frequency.value=fr;f.Q.value=q;const g=a.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(bus);return{f,g}};
   const lfo=(hz,depth,param)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=hz;g.gain.value=depth;o.connect(g);g.connect(param);o.start();return o};
   /* engine: saw + sub square through a low-pass; pitch and cutoff follow speed */
-  const e={o1:a.createOscillator(),o2:a.createOscillator(),f:a.createBiquadFilter(),g:a.createGain()};e.o1.type='sawtooth';e.o2.type='square';e.f.type='lowpass';e.f.Q.value=2;e.g.gain.value=0;
+  const e={o1:a.createOscillator(),o2:a.createOscillator(),f:a.createBiquadFilter(),g:a.createGain()};e.o1.type='triangle';e.o2.type='sine';e.f.type='lowpass';e.f.Q.value=.5;e.g.gain.value=0;
   e.o1.connect(e.f);e.o2.connect(e.f);e.f.connect(e.g);e.g.connect(B.sfx);e.o1.start();e.o2.start();SND.eng=e;
   /* helicopter rotor: low noise chopped by a slow oscillator whose rate follows the rotor */
   const r=vc('lowpass',380,.7,B.sfx),am=a.createGain();am.gain.value=.5;r.g.disconnect();r.g.connect(am);am.connect(B.sfx);r.am=am;r.lfo=lfo(8,.5,am.gain);SND.rot=r;
-  SND.v={skid:vc('bandpass',2300,4,B.sfx),tr:vc('lowpass',340,.6,B.amb),rain:vc('highpass',1100,.5,B.amb),wat:vc('lowpass',520,.6,B.amb),mur:vc('bandpass',700,.9,B.amb)};
+  SND.v={road:vc('lowpass',650,.5,B.sfx),skid:vc('bandpass',2300,4,B.sfx),tr:vc('lowpass',340,.6,B.amb),rain:vc('highpass',1100,.5,B.amb),wat:vc('lowpass',520,.6,B.amb),mur:vc('bandpass',700,.9,B.amb)};
   /* slow wobble goes through its own gain stage so it only shapes the sound and can never make it audible by itself */
   const wob=(v,hz,base,depth)=>{v.f.disconnect();const md=a.createGain();md.gain.value=base;v.f.connect(md);md.connect(v.g);lfo(hz,depth,md.gain)};wob(SND.v.wat,.35,.75,.25);wob(SND.v.mur,2.7,.65,.35);SND.ok=true}
 /* where is the ground green, paved or cobbled? */
@@ -96,33 +96,33 @@ function inPoly(k,x,y){let L=SND.cache[k];if(!L)L=SND.cache[k]=((WD&&WD[k])||[])
 function sndSurf(x,y){if(inPoly('green',x,y))return'grass';const sh=SND.cache.shad||(SND.cache.shad=D.anchors.find(a=>a[0]=='Shad Thames')||[0,-9e4,-9e4]);
   if((MALTBY&&hyp(x-MALTBY.x,y-MALTBY.y)<70)||hyp(x-sh[1],y-sh[2])<90)return'cobble';return inPoly('plaza',x,y)?'plaza':'path'}
 /* one-shot effects */
-function sfxStep(run){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,sf=sndSurf(pl.x,pl.y),k=(run?1.35:1)*(.8+Math.random()*.4);
-  if(sf=='grass'){nz(a,.11,'lowpass',650+Math.random()*200,.6,.05*k,B.sfx,t);nz(a,.09,'highpass',3200,.5,.01*k,B.sfx,t+.01)}
-  else if(sf=='cobble'){nz(a,.05,'bandpass',1100+Math.random()*300,1.8,.07*k,B.sfx,t);tone(a,'triangle',230+Math.random()*60,150,.06,.02*k,B.sfx,t)}
-  else if(sf=='plaza'){nz(a,.06,'bandpass',1400+Math.random()*300,1.2,.06*k,B.sfx,t);nz(a,.07,'lowpass',500,.5,.025*k,B.sfx,t)}
-  else{nz(a,.055,'bandpass',1700+Math.random()*500,.9,.06*k,B.sfx,t);nz(a,.08,'lowpass',420,.5,.03*k,B.sfx,t)}}
-function sfxJump(){const a=sA();if(!a)return;nz(a,.07,'bandpass',1500,.8,.035,sndBus(a).sfx,a.currentTime)}
-function sfxLand(hard){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,k=hard?1.8:1;nz(a,.09,'bandpass',1300,.9,.07*k,B.sfx,t);nz(a,.12,'lowpass',380,.5,.06*k,B.sfx,t);if(hard)tone(a,'sine',110,60,.14,.05,B.sfx,t)}
-function sfxThud(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;nz(a,.12,'lowpass',260,.6,.1,B.sfx,t);tone(a,'sine',95,55,.12,.06,B.sfx,t);nz(a,.03,'bandpass',2400,1,.02,B.sfx,t+.1)}
-function sfxDoor(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;tone(a,'sine',1760,0,.4,.035,B.sfx,t,.004);tone(a,'sine',2349,0,.35,.026,B.sfx,t+.1,.004)}
-function sfxTick(hi){const a=sA();if(!a)return;tone(a,'square',hi?1900:1500,0,.025,.012,sndBus(a).sfx,a.currentTime,.002)}
-function sfxBird(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,n=1+Math.random()*3|0,f0=3000+Math.random()*1800,dir=Math.random()<.5?.7:1.35;for(let i=0;i<n;i++)tone(a,'sine',f0*(1+i*.04),f0*dir,.07,.014,B.amb,t+i*.11,.012)}
-function sfxQuack(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;for(let i=0;i<(Math.random()<.5?1:2);i++){nz(a,.13,'bandpass',900,3,.05,B.amb,t+i*.2);tone(a,'sawtooth',330,220,.13,.012,B.amb,t+i*.2,.01)}}
-function sfxGull(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;tone(a,'triangle',1900,1100,.38,.03,B.amb,t,.03);tone(a,'sine',2100,1300,.3,.012,B.amb,t+.05,.03)}
+function sfxStep(run){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,sf=sndSurf(pl.x,pl.y),k=(run?1.2:1)*(.8+Math.random()*.4);
+  if(sf=='grass'){nz(a,.11,'lowpass',650+Math.random()*200,.6,.028*k,B.sfx,t);nz(a,.09,'highpass',3200,.5,.005*k,B.sfx,t+.01)}
+  else if(sf=='cobble'){nz(a,.05,'bandpass',1100+Math.random()*300,1.8,.035*k,B.sfx,t);tone(a,'triangle',230+Math.random()*60,150,.06,.01*k,B.sfx,t)}
+  else if(sf=='plaza'){nz(a,.06,'bandpass',1400+Math.random()*300,1.2,.03*k,B.sfx,t);nz(a,.07,'lowpass',500,.5,.012*k,B.sfx,t)}
+  else{nz(a,.055,'bandpass',1700+Math.random()*500,.9,.026*k,B.sfx,t);nz(a,.08,'lowpass',420,.5,.014*k,B.sfx,t)}}
+function sfxJump(){const a=sA();if(!a)return;nz(a,.07,'bandpass',1500,.8,.02,sndBus(a).sfx,a.currentTime)}
+function sfxLand(hard){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,k=hard?1.8:1;nz(a,.09,'bandpass',1300,.9,.035*k,B.sfx,t);nz(a,.12,'lowpass',380,.5,.03*k,B.sfx,t);if(hard)tone(a,'sine',110,60,.14,.03,B.sfx,t)}
+function sfxThud(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;nz(a,.12,'lowpass',260,.6,.06,B.sfx,t);tone(a,'sine',95,55,.12,.035,B.sfx,t);nz(a,.03,'bandpass',2400,1,.01,B.sfx,t+.1)}
+function sfxDoor(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;tone(a,'sine',1760,0,.4,.02,B.sfx,t,.004);tone(a,'sine',2349,0,.35,.015,B.sfx,t+.1,.004)}
+function sfxTick(hi){const a=sA();if(!a)return;tone(a,'square',hi?1900:1500,0,.025,.006,sndBus(a).sfx,a.currentTime,.002)}
+function sfxBird(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,n=1+Math.random()*3|0,f0=3000+Math.random()*1800,dir=Math.random()<.5?.7:1.35;for(let i=0;i<n;i++)tone(a,'sine',f0*(1+i*.04),f0*dir,.07,.009,B.amb,t+i*.11,.012)}
+function sfxQuack(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;for(let i=0;i<(Math.random()<.5?1:2);i++){nz(a,.13,'bandpass',900,3,.03,B.amb,t+i*.2);tone(a,'sawtooth',330,220,.13,.007,B.amb,t+i*.2,.01)}}
+function sfxGull(){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime;tone(a,'triangle',1900,1100,.38,.016,B.amb,t,.03);tone(a,'sine',2100,1300,.3,.007,B.amb,t+.05,.03)}
 function sfxTrain(d){const a=sA();if(!a)return;const B=sndBus(a),t=a.currentTime,v=clamp(1-d/230,.15,1),dur=7,s=a.createBufferSource();s.buffer=SND.nb;s.loop=true;
   const f=a.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(110,t);f.frequency.linearRampToValueAtTime(240,t+dur*.45);f.frequency.linearRampToValueAtTime(100,t+dur);
-  const g=a.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16*v,t+dur*.4);g.gain.linearRampToValueAtTime(0,t+dur);s.connect(f);f.connect(g);g.connect(B.amb);s.start(t);s.stop(t+dur+.1);
-  for(let i=0;i<14;i++){const tt=t+.4+i*.42,amp=v*.06*Math.sin(Math.PI*(i+1)/15);nz(a,.04,'bandpass',900,2,amp,B.amb,tt);nz(a,.04,'bandpass',1000,2,amp*.8,B.amb,tt+.09)}}
+  const g=a.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.09*v,t+dur*.4);g.gain.linearRampToValueAtTime(0,t+dur);s.connect(f);f.connect(g);g.connect(B.amb);s.start(t);s.stop(t+dur+.1);
+  for(let i=0;i<14;i++){const tt=t+.4+i*.42,amp=v*.035*Math.sin(Math.PI*(i+1)/15);nz(a,.04,'bandpass',900,2,amp,B.amb,tt);nz(a,.04,'bandpass',1000,2,amp*.8,B.amb,tt+.09)}}
 /* per-frame update: engines, footsteps, indicators, ambience beds and the random wildlife */
-const ENGP={hatch:[52,60,.05],cab:[46,52,.05],van:[40,48,.06],bus:[34,40,.085]};
+const ENGP={hatch:[52,60,.016],cab:[46,52,.016],van:[40,48,.02],bus:[34,40,.026]};
 const hourNow=()=>{if(window.DBGH!=null)return DBGH;const d=new Date();return d.getHours()+d.getMinutes()/60};
 function sndScan(p,hr){const z={tr:0,rain:0,wat:0,mur:0};let s=0;for(const c of cars){if(!c.ai)continue;const d=hyp(c.x-p.x,c.y-p.y);if(d<150)s+=1-d/150}
-  SND.park=inPoly('green',p.x,p.y);z.tr=Math.min(.075,(SND.park?.003:.007)+.011*s);
+  SND.park=inPoly('green',p.x,p.y);z.tr=Math.min(.04,(SND.park?.002:.004)+.006*s);
   let n=0;for(const r of [25,60])for(let k=0;k<8;k++)if(tAt(p.x+Math.cos(k*.785)*r,p.y+Math.sin(k*.785)*r)==3)n++;
-  z.wat=.06*Math.sqrt(n/16);SND.thames=n>0&&hyp(p.x-D.lake[0],p.y-D.lake[1])>180;
-  if(rainy()||window.DBGRAIN)z.rain=.06;
-  let m=0;if(hr>=9&&hr<=17.5){const d=Math.min(MALTBY?hyp(p.x-MALTBY.x,p.y-MALTBY.y):9e9,hyp(p.x-D.real.bluemkt[2],p.y-D.real.bluemkt[3]));if(d<120)m=.05*Math.pow(1-d/120,.8)}
-  if(hr>=17||hr<1){for(const sh of D.shops){if(sh[4]!='pub'&&sh[4]!='bar')continue;const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<45)m=Math.max(m,.035*(1-d/45))}}
+  z.wat=.03*Math.sqrt(n/16);SND.thames=n>0&&hyp(p.x-D.lake[0],p.y-D.lake[1])>180;
+  if(rainy()||window.DBGRAIN)z.rain=.035;
+  let m=0;if(hr>=9&&hr<=17.5){const d=Math.min(MALTBY?hyp(p.x-MALTBY.x,p.y-MALTBY.y):9e9,hyp(p.x-D.real.bluemkt[2],p.y-D.real.bluemkt[3]));if(d<120)m=.02*Math.pow(1-d/120,.8)}
+  if(hr>=17||hr<1){for(const sh of D.shops){if(sh[4]!='pub'&&sh[4]!='bar')continue;const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<45)m=Math.max(m,.014*(1-d/45))}}
   z.mur=m;SND.z=z;SND.hr=hr;
   const R2=SND.cache.rail||(SND.cache.rail=(()=>{const o=[];for(const l of (WD.rail||[]))for(let i=0;i<l.length;i+=2)o.push(l[i],l[i+1]);return o})());let bd=1e9;for(let i=0;i<R2.length;i+=2){const d=Math.abs(R2[i]-p.x)+Math.abs(R2[i+1]-p.y);if(d<bd)bd=d}SND.railD=bd}
 function sndUpdate(f){try{const a=AC;if(!a)return;if(!SND.ok){sndInit(a);return}const B=SND.bus,now=a.currentTime,on=started&&!paused&&ready&&!document.hidden&&a.state=='running';
@@ -130,14 +130,14 @@ function sndUpdate(f){try{const a=AC;if(!a)return;if(!SND.ok){sndInit(a);return}
   T(B.mus.gain,SND.mix.mus*(typeof DL!='undefined'&&DL?.55:1),.3);
   if(fr%24==0&&started)sndScan(p,hr);
   const light=ty=='bike'||ty=='ebike'||ty=='scooter'||ty=='courier',road=!!c&&ty!='heli'&&!light,e=SND.eng;let eg=0;
-  if(on&&c&&ty!='heli'){const cat=light?'light':'road';if(SND.ecat!=cat){SND.ecat=cat;e.o1.type=light?'triangle':'sawtooth';e.o2.type=light?'sine':'square'}
-    if(light){T(e.o1.frequency,150+r*380);T(e.o2.frequency,(150+r*380)*2.01);T(e.f.frequency,2400);eg=v>.01?.01+.022*r:0}
-    else{const P=ENGP[ty]||ENGP.hatch,g=Math.min(3,Math.floor(r*4)),fr2=r*4-g,hz=P[0]+g*6+P[1]*(.35*r+.65*fr2*(.5+.5*r));T(e.o1.frequency,hz);T(e.o2.frequency,hz*.5);T(e.f.frequency,260+r*700);eg=P[2]*(.45+.55*r)}}
+  if(on&&c&&ty!='heli'){const cat=light?'light':'road';SND.ecat=cat;
+    if(light){T(e.o1.frequency,150+r*380);T(e.o2.frequency,(150+r*380)*2.01);T(e.f.frequency,1200);eg=v>.01?.004+.008*r:0}
+    else{const P=ENGP[ty]||ENGP.hatch,g=Math.min(3,Math.floor(r*4)),fr2=r*4-g,hz=P[0]+g*6+P[1]*(.35*r+.65*fr2*(.5+.5*r));T(e.o1.frequency,hz);T(e.o2.frequency,hz*.5);T(e.f.frequency,200+r*380);eg=P[2]*(.5+.5*r)}}
   T(e.g.gain,eg,.06);
-  const h=typeof heli!='undefined'&&heli,sp=h?h.spool||0:0;let rg=0;if(on&&h&&sp>.02){const d=c===h?0:hyp(h.x-p.x,h.y-p.y);rg=.16*sp*clamp(1-d/260,0,1)}
+  const h=typeof heli!='undefined'&&heli,sp=h?h.spool||0:0;let rg=0;if(on&&h&&sp>.02){const d=c===h?0:hyp(h.x-p.x,h.y-p.y);rg=.07*sp*clamp(1-d/260,0,1)}
   T(SND.rot.g.gain,rg,.1);T(SND.rot.lfo.frequency,4+9*sp);T(SND.rot.f.frequency,260+300*sp);
-  const hb=K.brake||btnB;T(SND.v.skid.g.gain,on&&road&&hb&&r>.35?.045*r:0,.05);
-  const z=SND.z,k=on?1:0;T(SND.v.tr.g.gain,(z.tr+(road?r*.012:0))*k,.4);T(SND.v.rain.g.gain,z.rain*k,.6);T(SND.v.wat.g.gain,z.wat*k,.5);T(SND.v.mur.g.gain,z.mur*k,.5);
+  const hb=K.brake||btnB;T(SND.v.skid.g.gain,on&&road&&hb&&r>.35?.02*r:0,.05);T(SND.v.road.g.gain,on&&c&&ty!='heli'?(light?.005:.014)*r:0,.15);
+  const z=SND.z,k=on?1:0;T(SND.v.tr.g.gain,(z.tr+(road?r*.006:0))*k,.4);T(SND.v.rain.g.gain,z.rain*k,.6);T(SND.v.wat.g.gain,z.wat*k,.5);T(SND.v.mur.g.gain,z.mur*k,.5);
   if(on&&!c){const run=K.run||btnB,st=run?15:23,n=Math.floor(pl.walk/st);if(n!==SND.foot){if(pl.walk>0&&!(pl.jz>0)&&(pl.z||0)<.01)sfxStep(run);SND.foot=n}}else SND.foot=Math.floor(pl.walk/23);
   if(on&&road&&ty!='heli'){const stg=K.left||K.right||(joy.m>.3&&Math.abs(joy.x)>.5);if(stg&&v>.02){SND.st+=f;const q=Math.floor(SND.st/26);if(SND.st>40&&q!==SND.stn){SND.stn=q;sfxTick(q&1)}}else{SND.st=0;SND.stn=0}}
   if(on){const N=SND.nx,R=Math.random;

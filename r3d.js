@@ -1033,14 +1033,14 @@ function airPose(m,jz,flail){const u=m.userData,t=Math.min(1,(jz||0)/.35);if(t<=
 function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   const p=started?pos():(P.bells||P.flat||{x:1100,y:1360,a:0}),px=p.x*K,pz=p.y*K;
   // camera
-  const inCar=started&&pl.car,heliOn=inCar&&pl.car.type=='heli',alt=heli?(heli.alt||0)*55:0;
+  const inCar=started&&pl.car,heliOn=inCar&&pl.car.type=='heli',alt=heli?(heli.alt||0)*55:0,SPD=inCar&&!heliOn?Math.min(1,Math.abs(pl.car.v)/TYPES[pl.car.type].max):0;/* 0..1 how fast you're going: pulls the camera back, widens the view, looks ahead */
   if(started){CAM.yaw+=CAM.rx*2.5*dt;CAM.pitch=cl(CAM.pitch+CAM.ry*1.3*dt,.05,1.1);if(Math.abs(CAM.rx)>.05||Math.abs(CAM.ry)>.05)CAM.manual=1.4;CAM.manual-=dt;
-    const mv=inCar?Math.abs(pl.car.v)>.03:(K_moving());if(CAM.manual<=0&&mv){const d=angD(p.a,CAM.yaw);if(inCar||Math.abs(d)<2.2)CAM.yaw+=d*Math.min(1,dt*(inCar?2.2:.9))}}
+    const mv=inCar?Math.abs(pl.car.v)>.03:(K_moving());if(CAM.manual<=0&&mv){const d=angD(p.a,CAM.yaw);if(inCar||Math.abs(d)<2.2)CAM.yaw+=d*Math.min(1,dt*(inCar?2.9-1.2*SPD:.9))}}
   else{CAM.yaw+=dt*.07}
-  const dist=(heliOn?20:inCar?(TWO[pl.car.type]?6.5:9):5.2)/ZF*(started?1:7),ph=CAM.pitch+(heliOn?.15:0),ty=(heliOn?alt+2:inCar&&!TWO[pl.car.type]?1.6:1.5+(!inCar&&started?pl.z||0:0));
+  const dist=(heliOn?20:inCar?(TWO[pl.car.type]?6.5:9)*(1+.22*SPD):5.2)/ZF*(started?1:7),ph=CAM.pitch+(heliOn?.15:0),ty=(heliOn?alt+2:inCar&&!TWO[pl.car.type]?1.6:1.5+(!inCar&&started?pl.z||0:0));
   let dd=dist;const ox=-Math.cos(CAM.yaw)*Math.cos(ph),oz=-Math.sin(CAM.yaw)*Math.cos(ph),oy=Math.sin(ph);
   if(started&&!heliOn&&!(pl.z>0)){for(let s=.6;s<dist;s+=.4){if(!camFree(px+ox*s,pz+oz*s)&&ty+oy*s<14){dd=Math.max(1.2,s-.5);break}}}
-  camPos.set(px+ox*dd,Math.max(.6,ty+oy*dd+(started?0:20)),pz+oz*dd);if(!started)camera.position.copy(camPos);else camera.position.lerp(camPos,Math.min(1,dt*(dd<dist?18:9)));camLook.set(px,ty+(started?0:4),pz);camera.lookAt(camLook);if(started&&typeof shake=='number'&&shake>0){const a=Math.min(shake,8);camera.rotateZ((Math.random()-.5)*a*.012);camera.rotateX((Math.random()-.5)*a*.009);camera.rotateY((Math.random()-.5)*a*.009)}
+  camPos.set(px+ox*dd,Math.max(.6,ty+oy*dd+(started?0:20)),pz+oz*dd);if(!started)camera.position.copy(camPos);else camera.position.lerp(camPos,Math.min(1,dt*(dd<dist?18:9)));camLook.set(px+(pl.car&&pl.car.v>0?Math.cos(p.a)*2.6*SPD:0),ty+(started?0:4),pz+(pl.car&&pl.car.v>0?Math.sin(p.a)*2.6*SPD:0));camera.lookAt(camLook);if(!window.DBGCAM){const fb=(innerWidth<innerHeight?74:60)+SPD*9;if(Math.abs(camera.fov-fb)>.05){camera.fov+=(fb-camera.fov)*Math.min(1,dt*3);camera.updateProjectionMatrix()}}if(started&&typeof shake=='number'&&shake>0){const a=Math.min(shake,8);camera.rotateZ((Math.random()-.5)*a*.012);camera.rotateX((Math.random()-.5)*a*.009);camera.rotateY((Math.random()-.5)*a*.009)}
   if(window.DBGCAM){const d=window.DBGCAM;camera.position.set(d[0],d[1],d[2]);camera.lookAt(d[3],d[4],d[5]);if(window.DBGFOV&&camera.fov!==window.DBGFOV){camera.fov=window.DBGFOV;camera.updateProjectionMatrix()}}
   sun.position.set(px-60-SUNLOW*50,120-SUNLOW*62,pz-40+SUNLOW*22);sun.target.position.set(px,0,pz);
   if((lastLight-=dt)<=0){lastLight=.3;lighting(px,pz)}
@@ -1074,6 +1074,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   // vehicles (also on the title screen, once seeded)
   for(const c of cars){if(hyp(c.x-p.x,c.y-p.y)>560)continue;const m=ent(c,()=>{const m=vehMesh(c);if(c.type!='heli'){const bb=new THREE.Box3().setFromObject(m),sz=bb.getSize(new THREE.Vector3());m.add(blob(sz.z*1.15+.3,sz.x*1.1+.4))}return m});const y=c.type=='heli'?(c.alt||0)*55:0;m.position.set(c.x*K,y,c.y*K);m.rotation.y=-c.a;if(c.crashT!=null){const tt=fr-c.crashT;if(tt>=0&&tt<70){const w=(c.crashK||0)*Math.exp(-tt/14);m.rotation.z=Math.sin(tt*.7)*w*.12;m.rotation.x=Math.sin(tt*.9+1)*w*.07;m.position.y+=Math.abs(Math.sin(tt*.45))*w*.22}else{m.rotation.x=0;if(c.type!='heli')m.rotation.z=0;c.crashT=null}}
     if(c.type=='heli'){m.userData.rot.rotation.y=(c.rot||0)*.25;m.userData.tr.rotation.z=(c.rot||0)*.5;m.rotation.order='YZX';m.rotation.z=c.tilt||0;m.rotation.x=c.bank||0}/* nose dips at speed, banks into turns */
+    else if(c.roll||c.pit){m.rotation.order='YZX';m.rotation.z=c.pit||0;m.rotation.x=c.roll||0;if(c!==pl.car){c.roll*=.9;c.pit*=.9;if(Math.abs(c.roll)<.0005)c.roll=0;if(Math.abs(c.pit)<.0005)c.pit=0}}/* body leans out of turns, nose lifts and dips */
     if(c.rental&&c!==pl.car&&hyp(c.x-p.x,c.y-p.y)<40){const pm=ent(c.pinO||(c.pinO={}),()=>pinSprite('£','#2bd17e'));pm.position.set(c.x*K,1.9+Math.sin(tSec*3)*.08,c.y*K);pm.scale.set(.5,.5,1)}
     if(c.own&&c!==pl.car&&c.type!='heli'){const pm=ent(c.pinO||(c.pinO={}),()=>pinSprite('♥','#ff6fa5'));pm.position.set(c.x*K,2.2+Math.sin(tSec*3)*.08,c.y*K);pm.scale.set(.6,.6,1)}
     if(c===heli&&c!==pl.car){const pm=ent(c.pinO||(c.pinO={}),()=>pinSprite('H','#1f4aa8'));pm.position.set(c.x*K,5+Math.sin(tSec*3)*.1,c.y*K);pm.scale.set(1.4,1.4,1)}}
