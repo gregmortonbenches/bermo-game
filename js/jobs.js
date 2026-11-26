@@ -12,7 +12,7 @@ function startMis(i){if(act){toast("Finish the job you're on first");return}
   if(i==2){ensureBike();act.tg={...MALTBY,l:'Maltby Street Market'}}
   toast('JOB ON: '+mi.t.toUpperCase())}
 function startFavour(){if(act){toast("Finish the job you're on first");return}const p=pos();
-  const pool=D.pool.filter(q=>{const d=hyp(q[2]-p.x,q[3]-p.y);return d>60&&d<420});if(!pool.length){toast('No favours right now');return}
+  let pool=D.pool.filter(q=>{const d=hyp(q[2]-p.x,q[3]-p.y);return d>60&&d<420&&shopOpen(q)});if(!pool.length)pool=D.pool.filter(q=>{const d=hyp(q[2]-p.x,q[3]-p.y);return d>60&&d<420});if(!pool.length){toast('No favours right now');return}
   const a=pool[R()*pool.length|0],b=spot(220,520,a[2],a[3]);if(!b){toast('No favours right now');return}
   const what={cafe:'a coffee order',bakery:'a bag of bread',florist:'a bunch of flowers',greengrocer:'a veg box',butcher:'a Sunday joint',deli:'a deli order',post_office:'a parcel',books:'a book order',marketplace:'a market box',pet:'a bag of dog food',library:'a stack of library books'}[a[4]]||'a parcel';
   const st=streetAt(b.x,b.y)||'a neighbour',d=hyp(a[2]-b.x,a[3]-b.y);

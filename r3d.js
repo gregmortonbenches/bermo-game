@@ -691,14 +691,16 @@ window.R3DBG={g:0,tries:0};function places(){const V=VB();
             addBox(V,span,.08,1.5,cx,h+1.55,cz,'#5a6862',ry)}}
         next+=14+R()*8}acc+=L}}
   // Maltby Street: flags strung over the Ropewalk, and market stalls under the arches
+  /* stalls are only up on trading days (an hour either side); the random calls below still run so the shared stream is unchanged */
+  const MALTON=marketsOn(1).maltby,BLUEON=marketsOn(1).blue;
   {const r=WD.r.find(r=>r[3]=='Ropewalk');if(r){const p=pl2(r[0]),FL=['#d8202a','#2a5ad8','#f0c030','#2fa86a','#f4f0e8','#e07a2a','#8a3ac8'];let acc=0,nf=2,ns=4,nst=0;
       for(let i=0;i<p.length-1;i++){const [x0,z0]=p[i],[x1,z1]=p[i+1],L=hyp(x1-x0,z1-z0),ux=(x1-x0)/L,uz=(z1-z0)/L,nx=-uz,nz=ux,ry=Math.atan2(-uz,ux);
         while(nf<acc+L){const t=nf-acc,x=x0+ux*t,z=z0+uz*t;addBox(V,.03,.03,7,x,5.2,z,'#222',ry);for(let k=-3;k<=3;k+=.5)addBox(V,.03,.45,.35,x+nx*k,4.9,z+nz*k,FL[(R()*FL.length)|0],ry);nf+=4.5}
         /* a market stall (gazebo): table, legs, striped canopy, plus a peaked roof, valance, cloth skirt on the walk side and a row of produce. No random calls in here, so the shared random stream is unchanged */
-        const ST=(t,s,cc,pc)=>{const x=x0+ux*t+nx*s,z=z0+uz*t+nz*s,sd=Math.sign(s);addBox(V,2.2,.08,1,x,.9,z,'#8a6a48',ry);for(const a of [-1,1])for(const b of [-.45,.45])addBox(V,.06,2.2,.06,x+ux*a+nx*b,1.1,z+uz*a+nz*b,'#666');
+        const ST=(t,s,cc,pc)=>{if(!MALTON)return;const x=x0+ux*t+nx*s,z=z0+uz*t+nz*s,sd=Math.sign(s);addBox(V,2.2,.08,1,x,.9,z,'#8a6a48',ry);for(const a of [-1,1])for(const b of [-.45,.45])addBox(V,.06,2.2,.06,x+ux*a+nx*b,1.1,z+uz*a+nz*b,'#666');
           for(let k=0;k<4;k++)addBox(V,.55,.06,1.3,x+ux*(-.82+k*.55),2.25,z+uz*(-.82+k*.55),k%2?'#f4f0e8':cc,ry);addPyr(V,2.3,1.4,.42,x,2.28,z,cc,ry);for(const b of [-.66,.66])addBox(V,2.25,.2,.04,x+nx*b,2.14,z+nz*b,cc,ry);for(const a of [-1.12,1.12])addBox(V,.04,.2,1.35,x+ux*a,2.14,z+uz*a,'#f4f0e8',ry);
           addBox(V,2.2,.82,.03,x-nx*sd*.5,.45,z-nz*sd*.5,cc,ry);addBox(V,2.2,.1,.035,x-nx*sd*.5,.82,z-nz*sd*.5,'#f4f0e8',ry);for(let g=0;g<4;g++)addBox(V,.36,.14,.24,x+ux*(-.75+g*.5)-nx*sd*.38,1.01,z+uz*(-.75+g*.5)-nz*sd*.38,['#e8c040','#d84a2a','#7ab040','#f0e0c0','#c88a4a','#8a3a6a'][(FL.indexOf(cc)+g)%6],ry);addBox(V,1.6,.3,.6,x,1.08,z,pc,ry)};
-        while(ns<acc+L){const t=ns-acc,s=R()<.5?2.2:-2.2,cc=FL[(R()*FL.length)|0];ST(t,s,cc,['#e0b060','#c86a3a','#7aa050'][R()*3|0]);if(t+3.6<L-1)ST(t+3.6,-s,FL[(FL.indexOf(cc)+3)%FL.length],'#d8a048');nst++;ns+=7+R()*5}acc+=L}window.R3DBG&&(R3DBG.maltbyStalls=nst)}}
+        while(ns<acc+L){const t=ns-acc,s=R()<.5?2.2:-2.2,cc=FL[(R()*FL.length)|0];ST(t,s,cc,['#e0b060','#c86a3a','#7aa050'][R()*3|0]);if(t+3.6<L-1)ST(t+3.6,-s,FL[(FL.indexOf(cc)+3)%FL.length],'#d8a048');nst++;ns+=7+R()*5}acc+=L}window.R3DBG&&(R3DBG.maltbyStalls=MALTON?nst:0,R3DBG.blueOn=BLUEON)}}
   // The Blue: the clock tower on stilts clad in shiny embossed tin, oak canopies and the fountain
   {const mp=[2012*K,2162*K],X=mp[0],Z=mp[1],OAK='#b08a5a';
     for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])addBox(V,.3,6.2,.3,X+a*1,3.1,Z+b*1,OAK);addBox(V,2.4,3.4,2.4,X,7.8,Z,'#c8ccd2');
@@ -711,7 +713,7 @@ window.R3DBG={g:0,tries:0};function places(){const V=VB();
        Same gazebo as the Maltby Street stalls; deterministic (no random calls, so the shared random stream is unchanged); marked solid so people walk round them */
     {const FLB=['#d8202a','#2a5ad8','#f0c030','#2fa86a','#e07a2a','#8a3ac8','#2aa0a8'],PRB=['#e8c040','#d84a2a','#7ab040','#f0e0c0','#c88a4a','#8a3a6a'],ux=1,uz=0,nx=0,nz=1,ry=0;let nb=0;
      const ok=(cx,cz)=>{if(hyp(cx-X,cz-Z)<13.5||hyp(cx-2020*K,cz-2186*K)<6)return false;for(let a=-1.5;a<=1.5;a+=.5)for(let b=-1;b<=1;b+=.5){const x=cx+a,z=cz+b,t=tAt(x/K,z/K);if((t!=0&&t!=5&&t!=6)||!camFree(x,z))return false}return true};
-     for(const [row,sd] of [[2174,-1],[2183,1]])for(let k=0;k<10;k++){const x=(1995+k*5.2)*K,z=row*K;if(!ok(x,z))continue;const ci=(k*3+(sd>0?1:4))%FLB.length,cc=FLB[ci],pc=PRB[(k+ci)%PRB.length];
+     for(const [row,sd] of [[2174,-1],[2183,1]])for(let k=0;k<10;k++){const x=(1995+k*5.2)*K,z=row*K;if(!BLUEON||!ok(x,z))continue;const ci=(k*3+(sd>0?1:4))%FLB.length,cc=FLB[ci],pc=PRB[(k+ci)%PRB.length];
        addBox(V,2.2,.08,1,x,.9,z,'#8a6a48',ry);for(const a of [-1,1])for(const b of [-.45,.45])addBox(V,.06,2.2,.06,x+ux*a+nx*b,1.1,z+uz*a+nz*b,'#666');
        for(let q=0;q<4;q++)addBox(V,.55,.06,1.3,x+ux*(-.82+q*.55),2.25,z+uz*(-.82+q*.55),q%2?'#f4f0e8':cc,ry);addPyr(V,2.3,1.4,.42,x,2.28,z,cc,ry);for(const b of [-.66,.66])addBox(V,2.25,.2,.04,x+nx*b,2.14,z+nz*b,cc,ry);for(const a of [-1.12,1.12])addBox(V,.04,.2,1.35,x+ux*a,2.14,z+uz*a,'#f4f0e8',ry);
        addBox(V,2.2,.82,.03,x-nx*sd*.5,.45,z-nz*sd*.5,cc,ry);addBox(V,2.2,.1,.035,x-nx*sd*.5,.82,z-nz*sd*.5,'#f4f0e8',ry);for(let g=0;g<4;g++)addBox(V,.36,.14,.24,x+ux*(-.75+g*.5)-nx*sd*.38,1.01,z+uz*(-.75+g*.5)-nz*sd*.38,PRB[(ci+g)%6],ry);addBox(V,1.6,.3,.6,x,1.08,z,pc,ry);
@@ -1053,7 +1055,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
     if(two){const c=pl.car;dannyM.position.set(c.x*K-Math.cos(c.a)*(c.type=='bike'?.1:.15),c.type=='scooter'?.25:.2,c.y*K-Math.sin(c.a)*(c.type=='bike'?.1:.15));dannyM.rotation.y=-c.a;animPerson(dannyM,0,dt,c.type!='scooter');if(c.type=='scooter')animPerson(dannyM,0,dt)}
     else if(!pl.car){const s=spd(pl,pl.x,pl.y,dt);dannyM.position.set(pl.x*K,(pl.z||0)+(pl.jz||0),pl.y*K);dannyM.rotation.y=-pl.a;animPerson(dannyM,s,dt);airPose(dannyM,pl.jz,false)}
     // peds, their dogs, specials
-    for(const q of peds){const m=ent(q,()=>personMesh(q)),s=spd(q,q.x,q.y,dt);m.position.set(q.x*K,q.jz||0,q.y*K);m.rotation.y=-q.a;animPerson(m,s,dt);airPose(m,q.jz,q.startle>0);
+    for(const q of peds){const m=ent(q,()=>personMesh(q)),s=spd(q,q.x,q.y,dt);m.scale.setScalar(q.kid?.78:1);m.position.set(q.x*K,q.jz||0,q.y*K);m.rotation.y=-q.a;animPerson(m,s,dt);airPose(m,q.jz,q.startle>0);
       if(q.dog){const d=q.dog,dm=ent(d,()=>dogMesh(d.col,d.big,d.patch)),ds=spd(d,d.x,d.y,dt);dm.position.set(d.x*K,0,d.y*K);dm.rotation.y=-d.a;animDog(dm,ds,dt,tSec)}
       if(q.happy>0||q.want){const k=q.happy>0?'h':'w',pm=ent(q.happy>0?q.hp||(q.hp={}):q.wp||(q.wp={}),()=>pinSprite(q.happy>0?'♥':'?',q.happy>0?'#ff6fa5':'#3a6fd8'));pm.position.set(q.x*K,2.55+Math.sin(tSec*3)*.08,q.y*K);pm.scale.set(.55,.55,1)}}
     for(const q of specials){const m=ent(q,()=>personMesh(q)),s=spd(q,q.x,q.y,dt);m.position.set(q.x*K,0,q.y*K);m.rotation.y=-q.a;animPerson(m,s,dt);
@@ -1082,7 +1084,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   if(started)for(const k in P){const q=P[k],d=hyp(q.x-p.x,q.y-p.y);const giv=!act&&MIS[S.mission]&&MIS[S.mission].g==k;const key=(giv?'g':'n')+k;
     if(d<420){const pm=ent(PINS[key]||(PINS[key]={}),()=>pinSprite(q.ic,giv?'#ffb85c':q.c));const sc=cl(d*K*.045,1.1,4);pm.position.set(q.x*K,4.2+sc*.5+(giv?Math.abs(Math.sin(tSec*3))*.6:0),q.y*K);pm.scale.set(sc,sc,1)}}
   // shop name signs
-  if(started){const SP=[];for(const sh of D.shops){const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<50){let lv=0;for(const q of SP)if(hyp(q[0]-sh[2],q[1]-sh[3])<6)lv++;if(lv>2)continue;SP.push([sh[2],sh[3]]);const m=ent(sh,()=>{const s=textSprite(sh[0],sh[0]=='M. Manze'?'#1f5a3a':'rgba(20,16,36,.85)','#fff',.8);return s});m.position.set(sh[2]*K,3.5+lv*.95,sh[3]*K)}}}/* shops that share a spot (or nearly) stack their name tags instead of drawing on top of each other; at most 3 per spot */
+  if(started){const SP=[];for(const sh of D.shops){const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<50){let lv=0;for(const q of SP)if(hyp(q[0]-sh[2],q[1]-sh[3])<6)lv++;if(lv>2)continue;SP.push([sh[2],sh[3]]);const m=ent(sh,()=>{const s=textSprite(sh[0],sh[0]=='M. Manze'?'#1f5a3a':'rgba(20,16,36,.85)','#fff',.8);return s});m.position.set(sh[2]*K,3.5+lv*.95,sh[3]*K);m.material.transparent=true;m.material.opacity=shopOpen(sh)?1:.4}}}/* shops that share a spot (or nearly) stack their name tags instead of drawing on top of each other; at most 3 per spot */
   // targets
   const t=started&&act?act.tg:null;if(t){beacon=beacon||beaconMesh(0xffb85c);beacon.visible=true;beacon.position.set(t.x*K,20,t.y*K)}else if(beacon)beacon.visible=false;
   if(started&&dest){destBeacon=destBeacon||beaconMesh(0xff6fa5);destBeacon.visible=true;destBeacon.position.set(dest.x*K,20,dest.y*K)}else if(destBeacon)destBeacon.visible=false;

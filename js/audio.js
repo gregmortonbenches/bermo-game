@@ -121,7 +121,7 @@ function sndScan(p,hr){const z={tr:0,rain:0,wat:0,mur:0};let s=0;for(const c of 
   let n=0;for(const r of [25,60])for(let k=0;k<8;k++)if(tAt(p.x+Math.cos(k*.785)*r,p.y+Math.sin(k*.785)*r)==3)n++;
   z.wat=.03*Math.sqrt(n/16);SND.thames=n>0&&hyp(p.x-D.lake[0],p.y-D.lake[1])>180;
   if(rainy()||window.DBGRAIN)z.rain=.035;
-  let m=0;if(hr>=9&&hr<=17.5){const d=Math.min(MALTBY?hyp(p.x-MALTBY.x,p.y-MALTBY.y):9e9,hyp(p.x-D.real.bluemkt[2],p.y-D.real.bluemkt[3]));if(d<120)m=.02*Math.pow(1-d/120,.8)}
+  let m=0;{const mk=marketsOn(),d=Math.min(mk.maltby&&MALTBY?hyp(p.x-MALTBY.x,p.y-MALTBY.y):9e9,mk.blue?hyp(p.x-D.real.bluemkt[2],p.y-D.real.bluemkt[3]):9e9);if(d<120)m=.02*Math.pow(1-d/120,.8)}
   if(hr>=17||hr<1){for(const sh of D.shops){if(sh[4]!='pub'&&sh[4]!='bar')continue;const d=hyp(sh[2]-p.x,sh[3]-p.y);if(d<45)m=Math.max(m,.014*(1-d/45))}}
   z.mur=m;SND.z=z;SND.hr=hr;
   const R2=SND.cache.rail||(SND.cache.rail=(()=>{const o=[];for(const l of (WD.rail||[]))for(let i=0;i<l.length;i+=2)o.push(l[i],l[i+1]);return o})());let bd=1e9;for(let i=0;i<R2.length;i+=2){const d=Math.abs(R2[i]-p.x)+Math.abs(R2[i+1]-p.y);if(d<bd)bd=d}SND.railD=bd}

@@ -4,7 +4,7 @@
 let lt=performance.now();
 function maintain(){const p=pos();cars=cars.filter(c=>c.own||c===pl.car||!(!c.ai&&hyp(c.x-p.x,c.y-p.y)>600));
   let n=0;for(const c of cars)if(c.ai){n++;if(hyp(c.x-p.x,c.y-p.y)>500){const sp=spot(180,420);if(sp)Object.assign(c,{e:sp.e,s:sp.s,fw:sp.fw,x:sp.x,y:sp.y})}}
-  for(;n<24;n++){const sp=spot(180,420);if(sp)cars.push(mkCar(TT[n%TT.length],sp))}
+  for(;n<trafficTarget();n++){const sp=spot(180,420);if(sp)cars.push(mkCar(TT[n%TT.length],sp))}
   if(cars.filter(c=>!c.ai&&!c.own&&!c.rental).length<4){const sp=spot(120,260);if(sp)cars.push(kerbSpot(sp))}
   if(cars.filter(c=>c.rental&&hyp(c.x-p.x,c.y-p.y)<300).length<6){const sp=spot(40,260);if(sp){const r=kerbSpot(sp,R()<.5?'ebike':'scooter');r.rental=1;r.col='#2bd17e';cars.push(r)}}}
 function heliFloor(c){let m=0;for(const [dx,dy] of [[0,0],[6,0],[-6,0],[0,6],[0,-6]])m=Math.max(m,R3.roofAt(c.x+dx,c.y+dy));return m/55}

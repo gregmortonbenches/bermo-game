@@ -62,7 +62,7 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 
 ---
 
-## 4. A neighbourhood that lives (M–L)
+## 4. A neighbourhood that lives (M–L) — first pass DONE 26 Nov 2026
 
 **Why:** Locals will recognise the rhythm of the place, and it suits the wholesome tone better than chaos. Time of day already follows the real clock. Rain is currently faked (every third day of the month).
 
@@ -75,6 +75,8 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 - **Seasons:** Christmas lights in December and similar touches.
 
 **Done when:** playing at 8am on a Saturday feels noticeably different from 10pm on a Tuesday.
+
+**First pass (js/life.js):** real hours per shop type (locked door and "Opens at 9am" when shut, dimmed name tags, favours only from open shops); real market days (Maltby Street Fri 5.30–9pm / Sat 10–5 / Sun 11–4, Blue Market Mon–Sat 9–5, Bermondsey Square antiques Fri 6am–2pm, Spa Terminus Sat) with stalls only built on trading days and market chatter only then; pedestrian and traffic numbers follow the clock (quiet nights, rush hours, weekends); weekday school run (kids with parents walking to the real schools at 8–9am and out again at 3pm, skipping school holidays) and commuters to and from the tube and rail stations (7–9.30am, 5–7pm). Test with DBGH (hour) and DBGDOW (0=Sun). Not yet: shop lights and shutters, the Friday antiques stalls themselves, dog walkers at dawn and dusk, a proper weather cycle, seasons. Stalls are built at page load, so a session that crosses opening time needs a reload.
 
 ---
 
