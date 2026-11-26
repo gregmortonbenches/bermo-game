@@ -43,7 +43,7 @@ async function load(){
    const bl=rp('bluemkt'),bx=nearWalk(bl.x,bl.y-14);specials.push({kind:'boxer',x:bx.x,y:bx.y,hx:bx.x,hy:bx.y,a:0,t:0,walk:0,col:'#c8282e',trs:'#a82024',zip:1,hair:'#1a1a1a',skin:'#a86a40',talkT:0})}
   await new Promise(ok=>{const t=()=>window.R3?ok():setTimeout(t,40);t()});$('#startB').textContent='Building Bermondsey';await new Promise(r=>setTimeout(r,30));R3.build(WD);
   if(!hadSave){S.x=P.flat.x;S.y=P.flat.y}pl.x=S.x;pl.y=S.y;
-  TCOLS=Math.ceil(W*2/512);TROWS=Math.ceil(H*2/512);ready=true;$('#startB').disabled=false;$('#crewT').disabled=false;$('#startB').textContent=hadSave?'Continue':'Start';$('#title').classList.add('ready')}
+  TCOLS=Math.ceil(W*2/512);TROWS=Math.ceil(H*2/512);ready=true;$('#startB').disabled=false;$('#startB').textContent=hadSave?'Continue':'Start';$('#title').classList.add('ready')}
 let MALTBY=null;
 function namedPoint(n){const k=D.names.indexOf(n);if(k<0)return null;const ss=D.segs.filter(s=>s[4]==k);if(!ss.length)return null;const s=ss[ss.length>>1];return{x:(s[0]+s[2])>>1,y:(s[1]+s[3])>>1}}
 

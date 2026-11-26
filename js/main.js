@@ -33,17 +33,17 @@ function step(f,dt){heliStep(f);if(fr%40==0)updateRoute();if(pl.car){carStep(f);
   dogStep(f);worldStep(f);if(fr%30==0)maintain();misUpdate(dt);bumpCD-=dt;shake=Math.max(0,shake-f*.3);if(fr%9==0)syncCrew()}
 function loop(t){requestAnimationFrame(loop);const ms=Math.min(50,t-lt);lt=t;const f=ms/16.67,dt=ms/1000;fr++;
   if(started&&!paused&&ready)step(f,dt);else if(!started)att+=ms;
-  draw(f);if(fr%12==0)hud()}
+  sndUpdate(f);draw(f);if(fr%12==0)hud()}
 setInterval(()=>{if(started)writeSave()},20000);setInterval(()=>{if(started)syncMember()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started)writeSave()});addEventListener('pagehide',()=>{if(started)writeSave()});
 
 /* ---------- start ---------- */
-function startGame(){if(started||!ready)return;musStart();{const w=nearWalk(BELLK.x+Math.cos(BELLK.a)*16+4,BELLK.y+Math.sin(BELLK.a)*16+6);S.x=w.x;S.y=w.y;CAM.yaw=Math.atan2(BELLK.y-w.y,BELLK.x-w.x);pl.a=CAM.yaw}pl.x=S.x;pl.y=S.y;if(hit(pl.x,pl.y,2)||!S.x){pl.x=P.flat.x;pl.y=P.flat.y}{const t=tAt(pl.x,pl.y);if(t==1||t==7){const w=nearWalk(pl.x,pl.y);pl.x=w.x;pl.y=w.y}}seedTraffic();ensureBike();ensureHeli();cam.ok=0;
+function startGame(){if(started||!ready)return;musStart();sfxCtx();{const w=nearWalk(BELLK.x+Math.cos(BELLK.a)*16+4,BELLK.y+Math.sin(BELLK.a)*16+6);S.x=w.x;S.y=w.y;CAM.yaw=Math.atan2(BELLK.y-w.y,BELLK.x-w.x);pl.a=CAM.yaw}pl.x=S.x;pl.y=S.y;if(hit(pl.x,pl.y,2)||!S.x){pl.x=P.flat.x;pl.y=P.flat.y}{const t=tAt(pl.x,pl.y);if(t==1||t==7){const w=nearWalk(pl.x,pl.y);pl.x=w.x;pl.y=w.y}}seedTraffic();ensureBike();ensureHeli();cam.ok=0;
   started=true;$('#title').hidden=true;document.body.classList.remove('pre');
   if(!S.intro){S.intro=1;dlg('intro',{who:'NEW MESSAGE · MUM',title:'Morning, Sam!',text:'"Saw an old coffee cart going spare down Maltby Street. You\'ve always wanted one! You\'d need about £2,000 to get it going. Bermondsey\'s full of people who need a hand."<br><br>Help out around Bermondsey, then put your earnings in the savings tin at your flat on Abbey Street. Your e-cargo bike (♥) is parked outside.<br><br><span style="opacity:.7">'+(matchMedia('(pointer:fine)').matches?'WASD or arrows to move · drag the mouse to look · E to interact · Shift to run · M map · B bag':'Left stick to move · right stick to look around · A to interact')+'</span>',opts:[["Let's go!",()=>{}]]})}
   writeSave()}
 $('#startB').addEventListener('click',startGame);
-$('#crewT').addEventListener('click',()=>{startGame();if(started)crewDlg()});
+
 
 /* ---------- controls ---------- */
 function aBtn(){if(!ready)return;if(!started){startGame();return}if(DL){pick(DL.sel);return}if(bigMap){toggleMap();return}if(!paused){const a=ctxAct();if(a)a.f()}}
@@ -78,7 +78,7 @@ $('#bA').addEventListener('pointerdown',e=>{e.preventDefault();aBtn()});
 const bB=$('#bB');bB.addEventListener('pointerdown',e=>{e.preventDefault();if(DL){closeDlg();return}btnB=true;bB.classList.add('on')});for(const ev of ['pointerup','pointercancel','pointerleave'])bB.addEventListener(ev,()=>{btnB=false;bB.classList.remove('on')});
 $('#menuB').addEventListener('click',startBtn);$('#ziB').addEventListener('click',()=>bigMap?mapZoom(1.35):setZoom(ZF*1.2));$('#zoB').addEventListener('click',()=>bigMap?mapZoom(1/1.35):setZoom(ZF/1.2));
 c3.addEventListener('wheel',e=>{e.preventDefault();setZoom(ZF*Math.exp(-e.deltaY*.0015))},{passive:false});
-$('#mapB').addEventListener('click',toggleMap);
+$('#mmWrap').addEventListener('click',toggleMap);$('#mmWrap').addEventListener('keydown',e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();toggleMap()}});
 setInterval(()=>{const hl=pl.car&&pl.car.type=='heli';$('#bB').textContent=hl?'DOWN':pl.car?'BRAKE':'RUN';$('#bU').hidden=!hl;$('#bJ').hidden=!!pl.car},300);
 {const bJ=$('#bJ');bJ.addEventListener('pointerdown',e=>{e.preventDefault();btnJ=true;bJ.classList.add('on')});for(const ev of ['pointerup','pointercancel','pointerleave'])bJ.addEventListener(ev,()=>{btnJ=false;bJ.classList.remove('on')})}
 const bU=$('#bU');bU.addEventListener('pointerdown',e=>{e.preventDefault();btnU=true;bU.classList.add('on')});for(const ev of ['pointerup','pointercancel','pointerleave'])bU.addEventListener(ev,()=>{btnU=false;bU.classList.remove('on')});

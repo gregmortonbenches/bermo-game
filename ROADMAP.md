@@ -26,7 +26,7 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 
 ---
 
-## 2. Sound (M)
+## 2. Sound (M) — DONE 26 Nov 2026 (first pass)
 
 **Why:** Sound does more than graphics to make a low-poly world feel alive. Right now the game has synthesised jazz and two sound effects (a horn and a bump crunch), and nothing else.
 
@@ -38,6 +38,10 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 - Keep everything procedural (Web Audio) or in small self-hosted files in the repo. No new external hosts.
 
 **Done when:** a blind listen tells you whether you're in the park, at the market, by the arches or driving.
+
+**Result (all in `js/audio.js`, no audio files):** engine sounds that follow speed with gear changes (hatchback, black cab, van, bus; a quiet whirr for e-bikes and scooters), helicopter rotor that spools up and fades with distance, tyre squeal on hard braking, indicator ticks, footsteps that change on grass, paving, cobbles (Maltby Street, Shad Thames) and plaza, jump and landing thumps, car door thuds and the shop doorbell. Ambience beds for traffic, rain, the river and lake, market chatter on weekday daytime hours, pub murmur in the evening, birdsong and ducks in the park, gulls by the Thames and trains rumbling past the railway. A mixer (Bag, then Sound levels) sets music, effects and ambience separately and is remembered; music dips while a dialogue is open; everything goes quiet when the map is open. It was checked by measuring the output level in each place and situation, not by ear, so it needs a proper listen from you. Not done yet: wooden decking footsteps, real train timings (there are no visible trains to match), indicators only tick while steering, and market chatter doesn't follow real market days yet (that's phase 4).
+
+**Idea parked, needs your decision:** real London radio in cars. Best done with a short hand-checked list of station streams baked into the game (jazz and community stations), not a live lookup of the Radio Browser directory, with the jazz trio as fallback and a radio-off option. It means the game contacting each station's own server, so it breaks the "no new external hosts" rule.
 
 ---
 

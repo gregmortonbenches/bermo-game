@@ -70,7 +70,7 @@ function pedFeel(f){const dt=f/60,c=pl.car;yelpCD-=dt;const fast=c&&c.type!='hel
       if(ah>-2&&ah<10+Math.abs(c.v)*40&&Math.abs(lat)<4.5){/* a car is coming straight at them: leap aside with a yelp */let side=Math.sign(lat)||(R()<.5?1:-1);if(hitW(q.x-sa*side*7,q.y+ca*side*7))side=-side;
         q.dodge=24;q.dx=-sa*side*.3;q.dy=ca*side*.3;q.a=Math.atan2(q.dy,q.dx);q.jv=3.2;q.jz=.001;q.startle=70;q.t=100;q.talk=0;
         if(yelpCD<=0&&hyp(dx,dy)<30){yelpCD=4;toast(YELP[R()*YELP.length|0])}buzz(14,.2)}}}}
-function jumpStep(f){const k=K.brake||btnJ;if(k&&!pl.jHeld&&!(pl.jz>0)){pl.jv=4.6;pl.jz=.001;buzz(8,.12)}pl.jHeld=k;
-  if(pl.jz>0||pl.jv>0){const dt=f/60;pl.jv-=16*dt;pl.jz+=pl.jv*dt;if(pl.jz<=0){const hard=pl.jv<-3.6;pl.jz=0;pl.jv=0;fx(pl.x,pl.y,'dust',hard?8:5,pl.z||0);buzz(hard?22:12,hard?.35:.2)}}}
+function jumpStep(f){const k=K.brake||btnJ;if(k&&!pl.jHeld&&!(pl.jz>0)){pl.jv=4.6;pl.jz=.001;buzz(8,.12);sfxJump()}pl.jHeld=k;
+  if(pl.jz>0||pl.jv>0){const dt=f/60;pl.jv-=16*dt;pl.jz+=pl.jv*dt;if(pl.jz<=0){const hard=pl.jv<-3.6;pl.jz=0;pl.jv=0;fx(pl.x,pl.y,'dust',hard?8:5,pl.z||0);buzz(hard?22:12,hard?.35:.2);sfxLand(hard)}}}
 
 
