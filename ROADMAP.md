@@ -2,7 +2,7 @@
 
 The big pieces of work beyond small tweaks, in the order to do them. The scheduled play-test rounds keep handling bugs and polish. This file is for the larger work that needs dedicated sessions.
 
-**Parked for now:** story missions. They come back once the work below is in place.
+**Parked for now:** story missions, sharing with real players and the online crew. They're kept at the bottom of this file for later.
 
 Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sessions.
 
@@ -21,20 +21,6 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 **Done when:** the tester and the core-play checks pass unchanged, and no single file is over about 40 KB apart from the data files and `r3d.js`.
 
 **Scheduled rounds:** update their file list and rules to the new layout once this lands.
-
----
-
-## 1. Real players (ongoing, start now)
-
-**Why:** The automated tester finds bugs and ugly spots, but it can't tell if the game is fun.
-
-**What to do**
-- Send the GitHub Pages link to about five friends, ideally some who know Bermondsey.
-- Watch one or two play without helping. Note where they get lost, bored, confused or delighted.
-- Add a small "Send feedback" link in the pause menu that opens a GitHub issue form or an email. No new backend needed.
-- Feed findings into this file and the play-test log's "Still open" list.
-
-**Done when:** each phase below has been seen by at least two real players before it's called finished.
 
 ---
 
@@ -64,7 +50,7 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 - Small touches: a body roll hint, wheel turn, light camera shake on kerbs.
 - Expose the tuning numbers in one config object so they're easy to adjust later.
 
-**Done when:** a lap of Jamaica Road → Tower Bridge Road → Southwark Park Road feels good on both keyboard and phone sticks, and playtesters say so.
+**Done when:** a lap of Jamaica Road → Tower Bridge Road → Southwark Park Road feels good on both keyboard and phone sticks.
 
 ---
 
@@ -99,7 +85,39 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 
 ---
 
-## 6. Online crew everywhere (L, needs a decision)
+## Suggested order
+
+| When | Work |
+|---|---|
+| Next | 0. Split the code |
+| Then | 2. Sound and 3. Driving feel (either order, both quick wins) |
+| After | 5. Phones and loading |
+| After | 4. Living neighbourhood |
+| Later | Real players, online crew everywhere, story missions (parked) |
+
+## How the scheduled play-test rounds fit in
+
+The 6-hourly rounds stay small: bugs, polish and the art backlog. Once a phase is finished, they should include it in their checks. For example, after phase 2 they flag missing or wrong sounds, and after phase 5 they flag frame-rate drops. They don't start roadmap phases on their own.
+
+---
+
+# Parked for later
+
+## 1. Real players (parked)
+
+**Why:** The automated tester finds bugs and ugly spots, but it can't tell if the game is fun.
+
+**What to do**
+- Send the GitHub Pages link to about five friends, ideally some who know Bermondsey.
+- Watch one or two play without helping. Note where they get lost, bored, confused or delighted.
+- Add a small "Send feedback" link in the pause menu that opens a GitHub issue form or an email. No new backend needed.
+- Feed findings into this file and the play-test log's "Still open" list.
+
+**Done when:** the finished phases above have each been seen by at least two real players.
+
+---
+
+## 6. Online crew everywhere (L, parked, needs a decision)
 
 **Why:** The crew link-up (up to 8 players, gifts, seeing each other) only works in the claude.ai version, because it uses claude.ai's built-in storage and rooms. Players on GitHub Pages miss it.
 
@@ -117,19 +135,3 @@ Sizes: **S** = one session, **M** = two or three, **L** = a week or more of sess
 **Done when:** two players, one on GitHub Pages and one on claude.ai, can join the same crew and see each other.
 
 ---
-
-## Suggested order
-
-| When | Work |
-|---|---|
-| Now | 1. Real players (keep going throughout) |
-| Next | 0. Split the code |
-| Then | 2. Sound and 3. Driving feel (either order, both quick wins) |
-| After | 5. Phones and loading |
-| After | 4. Living neighbourhood |
-| When decided | 6. Online crew everywhere |
-| Later | Story missions (parked) |
-
-## How the scheduled play-test rounds fit in
-
-The 6-hourly rounds stay small: bugs, polish and the art backlog. Once a phase is finished, they should include it in their checks. For example, after phase 2 they flag missing or wrong sounds, and after phase 5 they flag frame-rate drops. They don't start roadmap phases on their own.
