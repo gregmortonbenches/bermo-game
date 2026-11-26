@@ -64,10 +64,10 @@ function crash(c,k,o){/* k: impact 0..1 (speed against top speed); o: the other 
   const sg=Math.sign(c.v||1),nx=c.x+Math.cos(c.a)*TYPES[c.type].w*.45*sg,ny=c.y+Math.sin(c.a)*TYPES[c.type].w*.45*sg;
   fx(nx,ny,'spark',3+k*14|0,.5);if(k>.35){fx(nx,ny,'debris',3+k*9|0,.6);fx(nx,ny,'dust',4+k*5|0,.1)}
   sfxCrunch(k);buzz(k>.6?[70,40,110]:k>.35?60:25,.3+k*.7);
-  if(o){o.crashT=fr;o.crashK=k*.8;o.spin=(o.spin||0)+(R()-.5)*.1*k;sfxHorn(hyp(o.x-c.x,o.y-c.y),.35+k*.4);if(bumpCD<=0){bumpCD=3;toast(RAMMED[R()*RAMMED.length|0])}}
+  if(o){o.crashT=fr;o.crashK=k*.8;o.spin=(o.spin||0)+(R()-.5)*.1*k;if(bumpCD<=0){bumpCD=3;toast(RAMMED[R()*RAMMED.length|0])}}
   else if(k>.35&&bumpCD<=0){bumpCD=3;toast(CRASH[R()*CRASH.length|0])}else oops();
   if(k>.3){for(const q of peds)if(hyp(q.x-c.x,q.y-c.y)<45&&!(q.jz>0)){q.jv=1.6+R()*1.4;q.jz=.001;q.startle=50}/* everyone nearby jumps out of their skin */
-    for(const h of cars)if(h!==c&&h!==o&&h.ai&&hyp(h.x-c.x,h.y-c.y)<60&&R()<.4)sfxHorn(hyp(h.x-c.x,h.y-c.y),.18)}}
+    }}
 function pedFeel(f){const dt=f/60,c=pl.car;yelpCD-=dt;const fast=c&&c.type!='heli'&&Math.abs(c.v)>.16,ca=c?Math.cos(c.a):0,sa=c?Math.sin(c.a):0,sg=c?Math.sign(c.v||1):1;
   for(const q of peds){if(q.jv||q.jz>0){q.jv-=15*dt;q.jz=(q.jz||0)+q.jv*dt;if(q.jz<=0){q.jz=0;q.jv=0}}if(q.startle>0)q.startle-=f;
     if(q.dodge>0){q.dodge-=f;const nx=q.x+q.dx*f,ny=q.y+q.dy*f;if(!hitW(nx,ny)){q.x=nx;q.y=ny}else q.dodge=0}
