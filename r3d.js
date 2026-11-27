@@ -181,7 +181,8 @@ function build(WD){
   for(const f of WD.water){const P=pl2(f);let my=1e9;for(let i=1;i<f.length;i+=2)my=Math.min(my,f[i]);flat(bk(my>300?'pond':'water',P[0][0],P[0][1]),P,.04,10);ribbon(bk('quay',P[0][0],P[0][1]),[...P,P[0]],1.2,.06,0,false)}
   for(const f of WD.foot){const P=pl2(f);ribbon(bk('path',P[0][0],P[0][1]),P,2.2,.03,0,true)}
   const COB=new Set(['Shad Thames','Gainsford Street','Curlew Street','Maltby Street','Ropewalk','Horselydown Lane','Lucey Way']);
-  const roads=WD.r.map(r=>({p:pl2(r[0]),w:r[1]*K,c:r[2],cob:COB.has(r[3]),ow:r[4]||0,cyc:r[5]||0,pic:r[6]||0,bus:r[7]||0}));
+  const roads=WD.r.map(r=>({p:pl2(r[0]),w:r[1]*K,c:r[2],nm:r[3]||'',cob:COB.has(r[3]),ow:r[4]||0,cyc:r[5]||0,pic:r[6]||0,bus:r[7]||0}));
+  ROADSR=roads;
   for(const r of roads){const b=r.p[0];ribbon(bk(r.cob?'cobble':'road',b[0],b[1]),r.p,r.w,r.cob?.052:.05,0,true)}
   /* road markings stop where they run into another road's carriageway (junction mouths), instead of carrying on across it */
   const RSEG=new Map(),RC=16,NOCUT=new Set(['pedestrian','track','footway','path','cycleway','steps','bridleway']);roads.forEach((r,ri)=>{if(NOCUT.has(r.c))return;const h=r.w/2;for(let i=0;i<r.p.length-1;i++){const [x0,z0]=r.p[i],[x1,z1]=r.p[i+1];for(let cx=Math.floor((Math.min(x0,x1)-h)/RC);cx<=Math.floor((Math.max(x0,x1)+h)/RC);cx++)for(let cz=Math.floor((Math.min(z0,z1)-h)/RC);cz<=Math.floor((Math.max(z0,z1)+h)/RC);cz++){const k=cx+','+cz;let L=RSEG.get(k);if(!L)RSEG.set(k,L=[]);L.push([ri,x0,z0,x1,z1,h])}}});
@@ -190,6 +191,8 @@ function build(WD){
   const mark=(G,pts,ri,w,y,us)=>{for(const c of clipM(pts,ri))ribbon(G,c,w,y,us,false)};
   roads.forEach((r,ri)=>{if(r.cob||['service','pedestrian','track','living_street'].includes(r.c))return;const b=r.p[0];for(const s of [1,-1])mark(bk('kerb',b[0],b[1]),offsetLine(r.p,s*(r.w/2-.12)),ri,.25,.055,0);
     if(!r.ow&&r.w>5.5){if(['trunk','primary','secondary','tertiary'].includes(r.c))mark(bk('line',b[0],b[1]),r.p,ri,.15,.06,6);else if(r.c=='residential'||r.c=='unclassified')mark(bk('line',b[0],b[1]),r.p,ri,.12,.06,9)}
+    /* residential streets: double yellow kerb lines for the first ~10 m at each end (no parking within 10 m of a junction) */
+    if((r.c=='residential'||r.c=='unclassified')&&r.w>5.5&&!r.ow){let tot=0;for(let i=1;i<r.p.length;i++)tot+=hyp(r.p[i][0]-r.p[i-1][0],r.p[i][1]-r.p[i-1][1]);if(tot>22){const Lh=Math.min(10,tot/2.6);for(const rev of [0,1]){const q=rev?[...r.p].reverse():r.p,seg=[q[0]];let acc=0;for(let i=1;i<q.length;i++){const d=hyp(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]);if(acc+d>=Lh){const t=(Lh-acc)/d;seg.push([q[i-1][0]+(q[i][0]-q[i-1][0])*t,q[i-1][1]+(q[i][1]-q[i-1][1])*t]);break}seg.push(q[i]);acc+=d}if(seg.length>1)for(const sd of [1,-1])for(const o of [.5,.75])mark(bk('yel',b[0],b[1]),offsetLine(seg,sd*(r.w/2-o)),ri,.1,.06,0)}}}
     const tg=r.c=='trunk'||r.c=='trunk_link'?'red':['primary','secondary','tertiary','primary_link','secondary_link'].includes(r.c)?'yel':null;if(tg)for(const s of [1,-1])for(const o of [.5,.75])mark(bk(tg,b[0],b[1]),offsetLine(r.p,s*(r.w/2-o)),ri,.1,.06,0)});
   // cycle tracks, painted cycle lanes, bus lanes and their markings, from OpenStreetMap lane tags
   const glyph=(G,x,z,dx,dz,len,wid,y)=>{const nx=-dz,nz=dx,a=[x-dx*len/2-nx*wid/2,y,z-dz*len/2-nz*wid/2],b=[x+dx*len/2-nx*wid/2,y,z+dz*len/2-nz*wid/2],c=[x+dx*len/2+nx*wid/2,y,z+dz*len/2+nz*wid/2],d=[x-dx*len/2+nx*wid/2,y,z-dz*len/2+nz*wid/2];tri(G,a,b,c,[0,1,0],[1,0],[1,1],[0,1]);tri(G,a,c,d,[0,1,0],[1,0],[0,1],[0,0])};
@@ -1129,6 +1132,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   for(let i=parts.length-1;i>=0;i--){const q=parts[i];if(!PICON[q.type]){parts.splice(i,1);continue}q.l-=f;q.h=(q.h||2)+.018*f;q.x+=q.vx*f*.15;q.y+=q.vx*f*.1;if(q.l<=0){parts.splice(i,1);continue}const m=ent(q,()=>pinSprite(...PICON[q.type]));m.position.set(q.x*K,q.h,q.y*K);const s=.45*Math.min(1,q.l/30);m.scale.set(s,s,1)}
   // remove anything no longer in the game
   for(const [o,m] of ENT)if(!seen.has(o)){scene.remove(m);ENT.delete(o);m.traverse(x=>{if(x.geometry&&!x.geometry.userData.shared)x.geometry.dispose();if(x.isSprite)x.material.dispose()})}
+  platesUpdate(px,pz,dt);
   renderer.render(scene,camera)}
 const angD=(a,b)=>{let d=a-b;while(d>PI)d-=2*PI;while(d<-PI)d+=2*PI;return d};
 function K_moving(){return (pl._sp||0)>.5}
@@ -1137,6 +1141,25 @@ function project(x,y,h){_v.set(x*K,h,y*K).project(camera);if(_v.z>1)return null;
 const PKL=[];const zeroM=new THREE.Matrix4().makeScale(0,0,0);
 function takeParked(i){const p=PKL[i];if(!p||p.gone)return;p.gone=true;p.m.setMatrixAt(p.i,zeroM);p.m.instanceMatrix.needsUpdate=true;const c=Math.cos(p.a),sn=Math.sin(p.a),x=p.x*K,z=p.y*K;for(let a=-1.9;a<=1.9;a+=.475)for(let b=-.6;b<=.6;b+=.3){const X=((x+c*a-sn*b)/K)|0,Y=((z+sn*a+c*b)/K)|0;if(X>=0&&Y>=0&&X<W&&Y<H)FB[Y*W+X]=0}}
 const keyMesh=()=>{const V=VB();addBox(V,.12,.02,.12,0,.02,0,'#c8c8d0');addBox(V,.2,.02,.05,.1,.02,0,'#e8c020');addBox(V,.03,.02,.06,.17,.02,.04,'#e8c020');return vmesh(V,false)};
+/* Street-name plates: white plate on a black corner post at the end of each named street, where it meets the road across. Pooled: only the nearest few are real meshes, relabelled as you move, so there is no texture per street. (Seen in Street View as a pattern, not copied.) */
+let PLK=null,ROADSR=null;const PLP=[],PLN=14;
+function platesInit(){PLK=[];const seenK=new Set();
+  for(const r of ROADSR||[]){if(!r.nm||!['residential','unclassified','tertiary','secondary','primary','living_street'].includes(r.c)||r.cob)continue;const p=r.p;let tot=0;for(let i=1;i<p.length;i++)tot+=hyp(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);if(tot<30)continue;
+    for(const rev of [0,1]){const q=rev?[...p].reverse():p,P0=q[0];let dx=0,dz=0;for(let i=1;i<q.length;i++){dx=q[i][0]-P0[0];dz=q[i][1]-P0[1];if(hyp(dx,dz)>3)break}const L=hyp(dx,dz);if(L<1)continue;dx/=L;dz/=L;const nx=-dz,nz=dx;let ok=null;
+      for(const off of [9,7,11,5]){for(const sd of [1,-1]){const x=P0[0]+dx*off+nx*sd*(r.w/2+.9),z=P0[1]+dz*off+nz*sd*(r.w/2+.9);if(tAt(x/K,z/K)==0){ok=[x,z];break}}if(ok)break}
+      if(!ok)continue;const k=r.nm+'|'+Math.round(ok[0]/4)+'|'+Math.round(ok[1]/4);if(seenK.has(k))continue;seenK.add(k);PLK.push([ok[0],ok[1],r.nm,Math.atan2(dx,dz)])}}
+  const post=new THREE.CylinderGeometry(.045,.055,2.5,6),pm=M({color:0x1c1c1e});
+  for(let i=0;i<PLN;i++){const g=new THREE.Group(),po=new THREE.Mesh(post,pm);po.position.y=1.25;g.add(po);
+    const cv=document.createElement('canvas');cv.width=256;cv.height=48;const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;
+    const pt=new THREE.Mesh(new THREE.PlaneGeometry(.92,.17),new THREE.MeshLambertMaterial({map:tx,side:THREE.DoubleSide}));pt.position.set(0,2.32,.07);g.add(pt);
+    g.visible=false;scene.add(g);PLP.push({g,cv,tx,key:null})}}
+let plT=0;
+function platesUpdate(px,pz,dt){if(!PLK){try{platesInit();window.R3DBG&&(R3DBG.plk=PLK)}catch(e){console.warn('plates',e);PLK=[]}}plT-=dt;if(plT>0)return;plT=.4;
+  const near=[];for(let i=0;i<PLK.length;i++){const q=PLK[i],d=hyp(q[0]-px,q[1]-pz);if(d<55)near.push([d,i])}near.sort((a,b)=>a[0]-b[0]);const want=near.slice(0,PLN).map(a=>a[1]),have=new Map();
+  for(const s of PLP)if(s.key!==null)have.set(s.key,s);const free=PLP.filter(s=>s.key===null||!want.includes(s.key));
+  for(const i of want){if(have.has(i))continue;const s=free.pop();if(!s)break;const q=PLK[i];s.key=i;s.g.position.set(q[0],0,q[1]);s.g.rotation.y=q[3];s.g.visible=true;
+    const g=s.cv.getContext('2d'),w=256,h=48;g.fillStyle='#f4f1e8';g.fillRect(0,0,w,h);g.strokeStyle='#161616';g.lineWidth=3;g.strokeRect(2,2,w-4,h-4);g.fillStyle='#141414';g.textAlign='center';g.textBaseline='middle';let fs=30;g.font='700 '+fs+'px Rubik, system-ui, sans-serif';const t=q[2].toUpperCase();while(g.measureText(t).width>w-20&&fs>12){fs-=2;g.font='700 '+fs+'px Rubik, system-ui, sans-serif'}g.fillText(t,w/2,h/2+1);s.tx.needsUpdate=true}
+  for(const s of PLP)if(s.key!==null&&!want.includes(s.key)){s.g.visible=false;s.key=null}}
 /* one frame with culling off so every mesh uploads to the GPU now and releases its CPU copy (three.js only uploads what is drawn) */
 function warm(){const ms=[];scene.traverse(o=>{if(o.isMesh&&o.frustumCulled){o.frustumCulled=false;ms.push(o)}});try{renderer.render(scene,camera)}catch(e){console.warn('warm',e)}finally{for(const o of ms)o.frustumCulled=true}}
 window.R3={build,warm,render,project,roofAt,fx:fxAdd,parked:()=>PKL,take:takeParked,info:()=>({...renderer.info.render,geo:renderer.info.memory.geometries})};

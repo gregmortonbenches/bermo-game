@@ -166,3 +166,9 @@ OSM had the whole estate as one solid 8,800 m2 "apartments" slab, so the courtya
 
 ## Memory, round two (27 Nov 2026)
 Phone reported memory trouble again. Headless JS heap was unchanged (about 102 MB) but that metric excludes typed arrays. Measured 7.6M vertices, about 250 MB of vertex data held twice (CPU and GPU). Today's LiDAR roofs and detail added about 3% (+208k vertices). Fix: release CPU copies after upload plus a one-off warm-up frame. Not fixed: peak during build (arrays all exist before first upload). Next ideas if it still fails: Int8 normals, Float16 uv, merge or reduce per-window geometry, lower draw detail on phones.
+
+## Oversized-building scan, street details (27 Nov 2026)
+- LiDAR scan for large footprints with bare ground inside found one real error besides Thorburn: a paved yard beside the St James's Road football pitch (building 2672) drawn as a 3.8 m block. Shrunk to a sub-pixel stub (indices are used by `WD.fronts` and `RIDX`, so never delete entries) and grid cells opened. The rest checked against satellite were real: Dock Shed (new Canada Water Leisure Centre), the Clements Road site, View Studios, the L-shaped block off Hawkstone Road, the Spa Road courtyard block. The LiDAR predates new builds, so "bare ground" there is not an error. The grid has no ghost walls (tile 2 with no building).
+- Street-name plates: white plate on a black post at the end of each named street (about 1,350). Pooled: 14 live meshes relabelled as you move (`platesUpdate`), so no texture per street.
+- Double yellow lines for the first ~10 m at each end of residential and unclassified streets (about +270k vertices, +8 MB).
+- Still on the Street View list: Thames Path fingerposts, tactile paving, steep-gabled modern infill.
