@@ -374,6 +374,15 @@ function build(WD){
       for(const s of [-1,1]){const bx=X+nx*s*(hw+1.1),bz=Z+nz*s*(hw+1.1),V=fv(bx,bz);for(let k=0;k<6;k++)addBox(V,.12,.45,.12,bx,.22+k*.45,bz,k%2?'#f0f0ea':'#1a1a1a');BELISHA.push([bx,2.95,bz])}}
     mesh(ZB,M2({color:0xf4f2ea,...PO(-4)}),false);
     if(BELISHA.length){const g=new THREE.InstancedMesh(new THREE.SphereGeometry(.24,10,8),BELMAT,BELISHA.length),mm2=new THREE.Matrix4();BELISHA.forEach((b,i)=>{mm2.makeTranslation(b[0],b[1],b[2]);g.setMatrixAt(i,mm2)});g.computeBoundingSphere();scene.add(g)}
+    // tactile paving (red blister, controlled crossings) at both kerbs of each zebra, either side of the beacon; Thames Path fingerposts at the way ends
+    {const TB=GB(),cv=document.createElement('canvas');cv.width=cv.height=64;const cx=cv.getContext('2d');cx.fillStyle='#d4584a';cx.fillRect(0,0,64,64);cx.fillStyle='#a8382e';for(let a=0;a<4;a++)for(let b=0;b<4;b++){cx.beginPath();cx.arc(8+a*16,8+b*16,3.2,0,7);cx.fill()}
+     const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;let nT=0;
+     for(const [zx,zy] of MLY.zebra){let best=null,bd=14;for(const r of WD.r){if(r[2]=='foot'||r[2]=='pedestrian')continue;const f=r[0];for(let i2=0;i2<f.length-2;i2+=2){const x0=f[i2],y0=f[i2+1],x1=f[i2+2],y1=f[i2+3],vx=x1-x0,vy=y1-y0,l=vx*vx+vy*vy||1,t=cl(((zx-x0)*vx+(zy-y0)*vy)/l,0,1),d=hyp(x0+vx*t-zx,y0+vy*t-zy);if(d<bd){bd=d;const L=Math.sqrt(l);best={x:x0+vx*t,y:y0+vy*t,ux:vx/L,uy:vy/L,w:r[1]}}}}
+      if(!best)continue;const X=best.x*K,Z=best.y*K,ux=best.ux,uz=best.uy,nx=-uz,nz=ux,e=best.w*K/2;
+      for(const s2 of[-1,1])for(const o of[-.9,.9]){const cx2=X+ux*o+nx*s2*(e+.55),cz2=Z+uz*o+nz*s2*(e+.55),hu=.42,hn=.55,P=(a,b)=>[cx2+ux*a+nx*b,.085,cz2+uz*a+nz*b];quad(TB,P(-hu,-hn),P(hu,-hn),P(hu,hn),P(-hu,hn),[0,1,0],0,1,0,1);nT++}}
+     R3DBG.tactile=nT;if(nT)mesh(TB,M2({map:tx,...PO(-5)}),false);
+     const fpS=new Set();let nF=0;for(const r of WD.r.filter(r=>r[3]=='Thames Path'||(r[3]=='Shad Thames'&&r[2]=='pedestrian'))){const p=pl2(r[0]);for(const [k,k2] of[[0,1],[p.length-1,p.length-2]]){const a=p[k],b=p[k2],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz)||1,ux=dx/L,uz=dz/L,X=a[0]-uz*(r[1]*K/2+.5)+ux*1.2,Z=a[1]+ux*(r[1]*K/2+.5)+uz*1.2,V=fv(X,Z),ry=Math.atan2(ux,uz)+PI/2;if(tAt(X/K,Z/K)!=0)continue;{const kk=(X/6|0)+','+(Z/6|0);if(fpS.has(kk))continue;fpS.add(kk)}
+       addBox(V,.1,1.9,.1,X,.95,Z,'#2c3a2c',ry);addBox(V,.62,.14,.03,X+ux*.28,1.72,Z+uz*.28,'#e8e6dc',ry);addBox(V,.14,.14,.035,X+ux*.64,1.72,Z+uz*.64,'#e8e6dc',ry+.5);addBox(V,.62,.14,.03,X-ux*.28,1.5,Z-uz*.28,'#e8e6dc',ry+PI);addBox(V,.14,.14,.035,X-ux*.64,1.5,Z-uz*.64,'#e8e6dc',ry+PI+.5);addBox(V,.2,.2,.04,X,2.05,Z,'#5a7a3a',ry);nF++}}R3DBG.fingerposts=nF}
   }
   // parked cars along residential and minor streets, kept clear of junctions, crossings, stops and signals
   {const avoid=[];for(let n=0;n<ADJ.length;n++)if(ADJ[n].length!=2)avoid.push([D.nodes[n][0],D.nodes[n][1],14]);
