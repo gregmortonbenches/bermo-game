@@ -58,14 +58,22 @@ addEventListener('blur',()=>{for(const k in K)K[k]=0;btnB=false;btnU=false;btnJ=
 const c3=$('#c3');
 function coarse(){document.body.classList.remove('fine');document.body.classList.add('coarse')}
 if(matchMedia('(pointer:coarse)').matches)coarse();
-const ST={L:{id:null,o:null,el:$('#stL')},R:{id:null,o:null,el:$('#stR')}};let mouse=null;
+const ST={L:{id:null,o:null,el:$('#stL')},R:{id:null,o:null,el:$('#stR')}};let mouse=null;const TP=new Map();let PINCH=null;
 c3.addEventListener('pointerdown',e=>{if(e.pointerType!='mouse')coarse();if(!started)return;try{c3.setPointerCapture(e.pointerId)}catch(_){}
   if(e.pointerType=='mouse'){mouse={id:e.pointerId,x:e.clientX,y:e.clientY};return}
-  const s=ST[e.clientX<innerWidth*.5?'L':'R'];if(s.id!==null)return;s.id=e.pointerId;s.o={x:e.clientX,y:e.clientY};s.el.style.left=s.o.x+'px';s.el.style.top=s.o.y+'px';s.el.classList.add('on');s.el.querySelector('i').style.transform=''});
-c3.addEventListener('pointermove',e=>{if(mouse&&e.pointerId===mouse.id){CAM.yaw+=(e.clientX-mouse.x)*.006;CAM.pitch=clamp(CAM.pitch+(e.clientY-mouse.y)*.004,.05,1.1);CAM.manual=2;mouse.x=e.clientX;mouse.y=e.clientY;return}
+  TP.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const s=ST[e.clientX<innerWidth*.5?'L':'R'];
+  if(s.id!==null){/* second finger on a half that is already held: pinch to zoom, and let go of that stick */
+    if(!PINCH&&TP.has(s.id)){const a=TP.get(s.id),b=TP.get(e.pointerId),k=s===ST.L?'L':'R';PINCH={a:s.id,b:e.pointerId,d0:Math.max(30,hyp(a.x-b.x,a.y-b.y)),z0:ZF};
+      s.id=null;s.el.style.left='';s.el.style.top='';s.el.classList.remove('on');s.el.querySelector('i').style.transform='';if(k=='L')joy={x:0,y:0,m:0};else{CAM.rx=0;CAM.ry=0}}
+    return}
+  s.id=e.pointerId;s.o={x:e.clientX,y:e.clientY};s.el.style.left=s.o.x+'px';s.el.style.top=s.o.y+'px';s.el.classList.add('on');s.el.querySelector('i').style.transform=''});
+c3.addEventListener('pointermove',e=>{if(TP.has(e.pointerId)){const t=TP.get(e.pointerId);t.x=e.clientX;t.y=e.clientY}
+  if(PINCH){if(e.pointerId===PINCH.a||e.pointerId===PINCH.b){const a=TP.get(PINCH.a),b=TP.get(PINCH.b);if(a&&b)setZoom(PINCH.z0*hyp(a.x-b.x,a.y-b.y)/PINCH.d0)}return}
+  if(mouse&&e.pointerId===mouse.id){CAM.yaw+=(e.clientX-mouse.x)*.006;CAM.pitch=clamp(CAM.pitch+(e.clientY-mouse.y)*.004,.05,1.1);CAM.manual=2;mouse.x=e.clientX;mouse.y=e.clientY;return}
   for(const k in ST){const s=ST[k];if(s.id!==e.pointerId)continue;let dx=e.clientX-s.o.x,dy=e.clientY-s.o.y;const l=hyp(dx,dy),m=52;if(l>m){dx=dx/l*m;dy=dy/l*m}s.el.querySelector('i').style.transform=`translate(${dx}px,${dy}px)`;
     const mg=Math.min(1,l/m);if(k=='L')joy={x:dx/m,y:dy/m,m:mg};else{const dz=v=>Math.abs(v)<.12?0:(v-Math.sign(v)*.12)/.88;CAM.rx=dz(dx/m);CAM.ry=dz(dy/m)}}});
-const pEnd=e=>{if(mouse&&e.pointerId===mouse.id)mouse=null;for(const k in ST){const s=ST[k];if(s.id!==e.pointerId)continue;s.id=null;s.el.style.left='';s.el.style.top='';s.el.classList.remove('on');s.el.querySelector('i').style.transform='';if(k=='L')joy={x:0,y:0,m:0};else{CAM.rx=0;CAM.ry=0}}};
+const pEnd=e=>{TP.delete(e.pointerId);if(PINCH&&(e.pointerId===PINCH.a||e.pointerId===PINCH.b)){PINCH=null;return}if(mouse&&e.pointerId===mouse.id)mouse=null;for(const k in ST){const s=ST[k];if(s.id!==e.pointerId)continue;s.id=null;s.el.style.left='';s.el.style.top='';s.el.classList.remove('on');s.el.querySelector('i').style.transform='';if(k=='L')joy={x:0,y:0,m:0};else{CAM.rx=0;CAM.ry=0}}};
 c3.addEventListener('pointerup',pEnd);c3.addEventListener('pointercancel',pEnd);
 const MP=new Map();let mapDrag=0,mapPinch=0;const mXY=e=>[e.clientX/innerWidth*IW,e.clientY/innerHeight*IH];
 cv.addEventListener('pointerdown',e=>{if(!(bigMap&&BIG))return;try{cv.setPointerCapture(e.pointerId)}catch(_){}MP.set(e.pointerId,{x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY});mapDrag=0;if(MP.size==2){const [a,b]=[...MP.values()];mapPinch=hyp(a.x-b.x,a.y-b.y);mapDrag=99}});
