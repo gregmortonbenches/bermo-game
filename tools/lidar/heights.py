@@ -7,13 +7,13 @@ E0,N0=532800,178200
 d=np.load('/tmp/lidar/dsm.npy');t=np.load('/tmp/lidar/dtm.npy');nd=d-t
 H,W=nd.shape
 def ll(x,y):return (51.5055-(y-285)*0.7692/111195, -0.0754+(x-958)*0.7692/69330)
-w=json.load(open('/home/claude/bermo-game/world3d.json'));B=w['b']
+w=json.load(open('/tmp/lidar/world3d_orig.json'));B=w['b']
 out=[]
 for i,b in enumerate(B):
     f=b[0];xs=f[0::2];ys=f[1::2]
     E=[];N=[]
     for x,y in zip(xs,ys):
-        la,lo=ll(x,y);e,n=T.transform(lo,la);E.append(e-E0);N.append(n-N0)
+        la,lo=ll(x,y);e,n=T.transform(lo,la);r=n-N0;E.append(e-E0+1.0);N.append(r+0.0055*r-9.4)  # game map drift vs LiDAR grid, measured by footprint overlap
     if min(E)<2 or max(E)>W-2 or min(N)<2 or max(N)>H-2:out.append((i,None,'edge'));continue
     x0,x1,y0,y1=int(min(E))-1,int(max(E))+2,int(min(N))-1,int(max(N))+2
     m=Image.new('L',(x1-x0,y1-y0),0);ImageDraw.Draw(m).polygon([(e-x0,n-y0) for e,n in zip(E,N)],fill=1);m=np.array(m,bool)

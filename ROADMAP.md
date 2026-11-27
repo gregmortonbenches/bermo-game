@@ -152,3 +152,8 @@ Keep improving design, accuracy to the local area, building design, physics and 
 
 ## LiDAR building heights (27 Nov 2026)
 Building heights in `world3d.json` now come from Environment Agency open LiDAR (1 m composite first-return DSM minus DTM, via the Defra WCS) for 3,516 of 4,309 buildings: the 85th-percentile height inside each eroded footprint, capped at median+4 m so tree overhang and rooftop plant do not inflate it. Kept the old OSM height where LiDAR reads under 2.2 m, is wildly different (ratio outside 0.45-2.2), the footprint is under 15 m2, or it is a landmark or the viaduct. Scripts and method in `tools/lidar/` (fetch.py, heights.py, apply.py). Result: 2,283 buildings changed by 0.3 m or more, mean absolute change 1.5 m. Original file kept in git history.
+
+## LiDAR alignment and roof shapes (27 Nov 2026)
+- Footprint-vs-LiDAR overlap showed the game map drifts from the BNG grid: north-south shift runs from about -8 m (south edge) to +3 m (north edge), east-west is a steady +1 m. The pipeline now applies `row' = row + 0.0055*row - 9.4`, `E + 1` (see tools/lidar/heights.py, roofs.py). Overlap 0.330 -> 0.381, peaking at zero shift. Heights re-run: 4,166 buildings now take a LiDAR height (was 3,516), LiDAR vs OSM r = 0.92.
+- Roof shapes: world3d.json building tuples gain element 11 (`rf`): -1 = flat in LiDAR (2,016), >0 = measured ridge rise in m (478 pitched), 0 = not measured (old guess). r3d.js uses it for hip roofs. Conservative on purpose; ambiguous roofs keep the old rule.
+- Measured, not seen: how it looks street by street on a phone.

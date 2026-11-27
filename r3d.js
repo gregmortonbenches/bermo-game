@@ -208,13 +208,13 @@ function build(WD){
   const SHB={};for(const sh of D.shops){const k=Math.floor(sh[2]*K/40)+','+Math.floor(sh[3]*K/40);(SHB[k]=SHB[k]||[]).push([sh[2]*K,sh[3]*K])}
   const shopNear=(P)=>{const [cx,cz]=cen(P),ring=[...P,P[0]];for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const L=SHB[(Math.floor(cx/40)+a)+','+(Math.floor(cz/40)+b)];if(L)for(const [x,z] of L)if(inPoly(x,z,P)||segD(x,z,ring)<4)return true}return false};
   const VIA=[],VIA_H=7,UNDP=(WD.viaduct&&WD.viaduct.under||[]).map(u=>{const p=pl2(u);return{p,ring:[...p,p[0]]}});const inUnd=(x,z)=>UNDP.some(u=>inPoly(x,z,u.p)||segD(x,z,u.ring)<1.6);
-  for(const [f,h,cat,hs,nm,bt,lv,mat_,col_,sty,rgb] of WD.b){TINT=[1,1,1];if(/^Tower Bridge (North|South) Tower$/.test(nm||'')||MODELLED.has(nm))continue;const P=pl2(f);if(P.length<3)continue;
+  for(const [f,h,cat,hs,nm,bt,lv,mat_,col_,sty,rgb,rf] of WD.b){TINT=[1,1,1];if(/^Tower Bridge (North|South) Tower$/.test(nm||'')||MODELLED.has(nm))continue;const P=pl2(f);if(P.length<3)continue;
     // railway viaduct mapped as an arches block: brick arches up to track level, ballast and track on top, never a roof slab over the line
     if(sty=='via'){VIA.push(P);continue}
     let wk=cat=='modern'?'modern':cat=='ware'?'ware':cat=='flats'?'flats':cat=='church'?'church':(hs%3==0?'red':hs%7==1?'paint':'stock');const c0=P[0],ov=override(nm||'',P);if(ov)wk=ov;else if(sty&&WM[sty]){wk=sty;if(rgb){const m=WMEAN[wk];TINT=[0,1,2].map(i=>cl(rgb[i]*1.38/m[i],.45,2.8))}}const res=wk=='stock'||wk=='red'||wk=='paint';
     const isShop=(cat=='shopfront'||(res&&h<18&&shopNear(P)));
     const G=bk('w'+wk,c0[0],c0[1]),gk=isShop?['shop','shop1','shop2','shop3'][hs%4]:res?(wk=='red'?'gdoorR':wk=='paint'?'gpaint':'gdoorS'):wk=='ware'?'wground':null,Gg=gk?bk(gk,c0[0],c0[1]):null,gw=isShop?20:8;
-    let roof=null,eave=h;if(res&&!isShop&&h>4.5&&h<16){roof=obb(P);if(roof&&roof.v1-roof.v0>3&&roof.v1-roof.v0<16){roof.rh=Math.min(3.4,(roof.v1-roof.v0)*.42);eave=Math.max(GHT+2.6,h-roof.rh*.45)}else roof=null}
+    let roof=null,eave=h;/* rf: LiDAR roof shape (-1 flat, >0 measured rise in m, 0 not measured: old guess) */if(res&&!isShop&&rf!==-1&&(rf>0?h>3.8&&h<20:h>4.5&&h<16)){roof=obb(P);if(roof&&roof.v1-roof.v0>3&&roof.v1-roof.v0<16){roof.rh=rf>0?Math.min(3.4,Math.max(1.2,rf*1.1)):Math.min(3.4,(roof.v1-roof.v0)*.42);eave=Math.max(GHT+2.6,h-roof.rh*.45)}else roof=null}
     const split=Gg&&eave>GHT+1.5;let acc=0,longest=null;
     for(let i=0;i<P.length;i++){const [x0,z0]=P[i],[x1,z1]=P[(i+1)%P.length],dx=x1-x0,dz=z1-z0,L=hyp(dx,dz);if(L<.05)continue;let nx=dz/L,nz=-dx/L,fp=0;if(inPoly((x0+x1)/2+nx*.2,(z0+z1)/2+nz*.2,P)){nx=-nx;nz=-nz;fp=1}
       const bw=wk=='modern'?3:wk=='flats'||wk=='ftm'||wk=='jchurch'?5:wk=='ware'?8:wk=='white'||wk=='alaska'?6:4,sh=wk=='jchurch'?8:wk=='modern'||wk=='ware'||wk=='lib'||wk=='alaska'?3.6:wk=='ftm'||wk=='white'?4:3.2,y0=split?GHT:0;

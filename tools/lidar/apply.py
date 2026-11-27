@@ -1,5 +1,5 @@
 import json,pickle,numpy as np,re,collections
-p='/home/claude/bermo-game/world3d.json'
+p='/tmp/lidar/world3d_orig.json'
 raw=open(p).read();w=json.loads(raw);B=w['b']
 res=pickle.load(open('/tmp/lidar/res.pkl','rb'))
 SKIP=re.compile(r'Tower Bridge|Shard|City Hall|HMS|Tower of London|London Bridge',re.I)
