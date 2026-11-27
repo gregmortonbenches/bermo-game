@@ -28,6 +28,8 @@ const xy=a=>({x:a[0],y:a[1]});
 async function load(){
   const [d,mi,gi,wd,mlyd]=await Promise.all([fetch('data.json').then(r=>r.json()),img('map.png'),img('grid.png'),fetch('world3d.json').then(r=>r.json()),fetch('mly.json').then(r=>r.ok?r.json():null).catch(()=>null)]);WD=wd;WD.mly=mlyd;
   D=d;W=d.W;H=d.H;C=d.C;GW=d.GW;GH=d.GH;MAP=mi;
+  /* area-name banner = nearest anchor: Bermondsey Spa Gardens (address: Grange Road) had none, so half of it read as Tower Bridge Road */
+  D.anchors.push(['Grange Road',880,1800]);
   const c=document.createElement('canvas');c.width=GW;c.height=GH;const q=c.getContext('2d',{willReadFrequently:true});q.drawImage(gi,0,0);const px=q.getImageData(0,0,GW,GH).data;
   G=new Uint8Array(GW*GH);for(let i=0;i<G.length;i++)G[i]=Math.round(px[i*4]/30);
   EDGES=d.edges.map(([a,b,poly,nm,w,main,ow])=>{const p=[];for(let i=0;i<poly.length;i+=2)p.push([poly[i],poly[i+1]]);const cum=[0];for(let i=1;i<p.length;i++)cum.push(cum[i-1]+hyp(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));return{a,b,p,cum,len:cum[cum.length-1],nm,w,main,ow:ow||0,off:p.some(q=>q[0]<2||q[1]<2||q[0]>d.W-2||q[1]>d.H-2)}});/* off: edge leaves the map, where every cell is solid */
