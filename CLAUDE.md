@@ -33,6 +33,6 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 Live London weather from Open-Meteo is read in js/life.js (`WX`, `wxNow()`); it falls back to the old date rule if blocked. Test with `DBGWX`, `DBGH` (hour) and `DBGDOW` (day of week).
 
 ## Radio and parachute
-- `js/radio.js`: car radio from the Radio Browser directory (BAG menu, T = next station). Plays only in a vehicle, silences the jazz.
+- `js/radio.js`: car radio from the Radio Browser directory (BAG menu, T = next station). Plays in a vehicle and as headphones on foot, silences the jazz.
 - `js/chute.js`: freefall then automatic parachute (jump out of the helicopter, leap from a roof edge). Low fences (`FLOW` grid in r3d.js, `hitJ` in core.js) can be cleared with a jump.
 - three.js hides an object only when `visible === false`: never set `.visible` to undefined.
