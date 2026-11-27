@@ -40,7 +40,10 @@ function pathIndex(){PATHB={};const add=(pts,hw)=>{for(let i=0;i+3<pts.length;i+
 function onSidePath(x,y,vx,vy){if(!PATHB)pathIndex();const L=Math.hypot(vx,vy)||1;for(const q of PATHB[(x>>6)+','+(y>>6)]||[]){const px=q[2]-q[0],py=q[3]-q[1],l=px*px+py*py||1,t=clamp(((x-q[0])*px+(y-q[1])*py)/l,0,1);if(Math.hypot(q[0]+px*t-x,q[1]+py*t-y)>q[4])continue;const c=Math.abs(px*vx+py*vy)/(Math.sqrt(l)*L);if(c<.82)return true}return false}
 function streetAt(x,y){let b='',bd=196,bv=null;for(let gx=(x>>6)-1;gx<=(x>>6)+1;gx++)for(let gy=(y>>6)-1;gy<=(y>>6)+1;gy++)for(const s of SEGB[gx+','+gy]||[]){const vx=s[2]-s[0],vy=s[3]-s[1],l=vx*vx+vy*vy||1,t=clamp(((x-s[0])*vx+(y-s[1])*vy)/l,0,1),d=(s[0]+vx*t-x)**2+(s[1]+vy*t-y)**2;if(d<bd){bd=d;b=D.names[s[4]];bv=[vx,vy]}}
   /* well off the named road's centre line and standing on a path that heads another way: no name, rather than the wrong one */
-  if(b&&bd>64&&onSidePath(x,y,bv[0],bv[1]))return '';return b}
+  if(b&&bd>64&&onSidePath(x,y,bv[0],bv[1]))return '';
+  /* grass and plaza (parks, squares) only borrow the road's name right at the kerb */
+  if(b&&bd>25){const t=tAt(x,y);if(t==5||t==6)return ''}
+  return b}
 function enterCar(c){sfxThud();c.v=0;c.ai=false;pl.car=c;pl.z=0;if(c.type!='heli')unstick(c);if(c.type=='heli')toast(['A pilot on a tea break waves: "Bring it back in one piece, love!" ','You leave a note on the pad: "Borrowed, sorry! Back soon." ','The radio crackles: "...fine, but no loop-the-loops." '][R()*3|0]+(matchMedia('(pointer:fine)').matches?'Q to climb, Space to descend.':'Hold UP to climb, DOWN to descend.'))}
 function leaveCar(){const c=pl.car;if(!c)return;if(c.type!='heli')sfxThud();let roof=0;if(c.type=='heli'){if(!c.landed&&((c.alt||0)-heliFloor(c))*55>2.5){startChute((c.alt||0)*55,0,0);return}if(!c.landed){toast(matchMedia('(pointer:fine)').matches?'Lower it down first: hold Space to descend, Q to climb.':'Lower it down first: hold DOWN to descend.');return}
     roof=heliFloor(c)*55;if(!roof&&tAt(c.x,c.y)==3){toast("That's the Thames. Find somewhere dry.");return}c.v=0;c.vx=0;c.vy=0;toast(roof?'Touchdown on the roof. Mind the edge!':'Touchdown.')}
