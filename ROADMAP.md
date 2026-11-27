@@ -148,3 +148,7 @@ The 6-hourly rounds stay small: bugs, polish and the art backlog. Once a phase i
 
 # Ongoing (from Greg, 26 Nov 2026)
 Keep improving design, accuracy to the local area, building design, physics and the engine, round by round (the scheduled play-test rounds cover this). Done recently: car radio (Radio Browser, js/radio.js), parachute jumps from the helicopter and rooftops (js/chute.js), jumping over low garden fences, and the fix for the player's avatar staying on the ground when getting into a vehicle (three.js only hides an object when `visible === false`, so always set it with a real boolean).
+
+
+## LiDAR building heights (27 Nov 2026)
+Building heights in `world3d.json` now come from Environment Agency open LiDAR (1 m composite first-return DSM minus DTM, via the Defra WCS) for 3,516 of 4,309 buildings: the 85th-percentile height inside each eroded footprint, capped at median+4 m so tree overhang and rooftop plant do not inflate it. Kept the old OSM height where LiDAR reads under 2.2 m, is wildly different (ratio outside 0.45-2.2), the footprint is under 15 m2, or it is a landmark or the viaduct. Scripts and method in `tools/lidar/` (fetch.py, heights.py, apply.py). Result: 2,283 buildings changed by 0.3 m or more, mean absolute change 1.5 m. Original file kept in git history.
