@@ -176,7 +176,11 @@ function build(WD){
   const tile=(x,z)=>Math.floor(x/360)+","+Math.floor(z/360),buckets={},bk=(m,x,z)=>{const k=m+'|'+tile(x,z);return buckets[k]||(buckets[k]=GB())};
   for(const f of WD.green){const P=pl2(f);flat(bk('grass',P[0][0],P[0][1]),P,.02,4)}
   // back gardens and courtyard lawns behind the buildings
-  if(WD.gard)for(const [x,y,w,h] of WD.gard){const X=x*K,Z=y*K,Wd=w*K,Hd=h*K;flat(bk('lawn',X,Z),[[X,Z],[X+Wd,Z],[X+Wd,Z+Hd],[X,Z+Hd]],.012,4)}
+  if(WD.gard){/* lawn rows come from the 4 px grid, so their ends made stair steps from the air. Each row's end now meets the overlapping row above/below halfway (only for steps up to 8 px), so lawn edges run as diagonals; visual only */
+   const RT={},RB={};for(const r of WD.gard){(RT[r[1]]||(RT[r[1]]=[])).push(r);(RB[r[1]+r[3]]||(RB[r[1]+r[3]]=[])).push(r)}
+   const nb=(row,r,i)=>{const x=i?r[0]+r[2]:r[0];if(!row)return x;let bx=x,bd=8.5;for(const q of row){if(q===r||q[0]>=r[0]+r[2]||q[0]+q[2]<=r[0])continue;const qx=i?q[0]+q[2]:q[0],d=Math.abs(qx-x);if(d<bd){bd=d;bx=qx}}return (x+bx)/2};let sm=0;
+   for(const r of WD.gard){const [x,y,w,h]=r,up=RB[y],dn=RT[y+h],lt=nb(up,r,0),rt=nb(up,r,1),lb=nb(dn,r,0),rb=nb(dn,r,1);if(lt!=x||rt!=x+w||lb!=x||rb!=x+w)sm++;
+    if(rt-lt<.5&&rb-lb<.5)continue;flat(bk('lawn',x*K,y*K),[[lt*K,y*K],[rt*K,y*K],[rb*K,(y+h)*K],[lb*K,(y+h)*K]],.012,4)}R3DBG.lawnSmooth=sm}
   for(const f of WD.plaza){const P=pl2(f);flat(bk('plaza',P[0][0],P[0][1]),P,.025,4)}
   for(const f of WD.water){const P=pl2(f);let my=1e9;for(let i=1;i<f.length;i+=2)my=Math.min(my,f[i]);flat(bk(my>300?'pond':'water',P[0][0],P[0][1]),P,.04,10);ribbon(bk('quay',P[0][0],P[0][1]),[...P,P[0]],1.2,.06,0,false)}
   for(const f of WD.foot){const P=pl2(f);ribbon(bk('path',P[0][0],P[0][1]),P,2.2,.03,0,true)}
