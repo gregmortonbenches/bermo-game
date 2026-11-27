@@ -160,3 +160,6 @@ Building heights in `world3d.json` now come from Environment Agency open LiDAR (
 
 ## Street View spot checks (27 Nov 2026)
 Reference-only visits (West Lane / Bermondsey Wall East, Webb Street, Old Kent Road). Done: dark cast-iron wall-tie plates in rows on warehouse walls (`TIES` in r3d.js). Noted, not yet done: Thames Path fingerposts, white-on-black street name plates on poles, double yellow lines at kerbs, tactile paving at crossings, steep-gabled modern infill housing (Webb St).
+
+## Thorburn Square (27 Nov 2026)
+OSM had the whole estate as one solid 8,800 m2 "apartments" slab, so the courtyard and St Anne's Church were buried under a flat roof and unreachable. Now: four blocks (13 m deep, LiDAR height about 10.4 m) around an open green courtyard with 16 trees, church and hall as before, and a gateway through the north block. `grid.png` opened inside (653 cells grass, 13 cells gate). Gate position is a guess; the aerial view did not show where the real entrances are. Pre-edit copies were /tmp only; git history has the originals.
