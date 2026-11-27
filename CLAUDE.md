@@ -18,6 +18,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 - Sound is procedural Web Audio: music/sfx/amb buses with trims into a limiter. Driving numbers sit in `DRV_TUNE` (vehicles.js). Keep new sounds quiet; measure with `sndRms()`.
 - Headless swiftshader timings are not representative of phones.
 - Memory: iPhones kill the tab around 1 GB. Geometry builders (`GB()`/`VB()` in r3d.js) store into growing Float32Arrays (`FA`), never plain JS arrays; pass them to three.js with `F32(x.p)`. Check load memory with CDP `Performance.getMetrics` (JSHeapTotalSize); it was 1312 MB peak with plain arrays and is about 109 MB now.
+  - JSHeapTotalSize does NOT count typed arrays: the world is ~7.6M vertices (~250 MB of vertex data, CPU copy plus GPU copy). `mesh()` frees each static geometry's CPU array after upload (`onUpload`) and `R3.warm()` (called from core.js after build) draws one unculled frame so everything uploads. Never read `.attributes.*.array` of a `mesh()` geometry later. Context restore reloads the page. Measure the renderer process RSS after a forced `HeapProfiler.collectGarbage` (about 976 -> 852 MB in swiftshader); swiftshader RSS is inflated, so this is a relative number only.
 
 ## Publish routine
 1. Test with Playwright (chromium at /opt/pw-browsers/chromium-1243/chrome-linux64/chrome, flags `--use-gl=swiftshader --enable-unsafe-swiftshader`).

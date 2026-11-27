@@ -46,7 +46,7 @@ async function load(){
    {/* two monks from Kagyu Samye Dzong (the old Bermondsey Library, Spa Road) who set off from the centre on a slow walk round the area and come home again */const kc=D.pool.find(p=>p[0]=='Kagyu Samye Dzong London'),hx=kc?kc[2]:1036,hy=kc?kc[3]:1678,dr=nearWalk(hx-4,hy+20);
     const m1={kind:'monk',walker:1,x:dr.x,y:dr.y,hx:dr.x,hy:dr.y,a:PI/2,t:60*(4+R()*8),walk:0,col:'#5c1a22',skin:'#c89468',robe:1,talkT:0,st:'door'},m2={kind:'monk',walker:2,lead:m1,x:dr.x+1.8,y:dr.y,hx:dr.x,hy:dr.y,a:PI/2,t:0,walk:0,col:'#a2222c',skin:'#efc8a8',robe:1,specs:1,nopin:1,talkT:0};m1.mate=m2;specials.push(m1,m2)}
    const bl=rp('bluemkt'),bx=nearWalk(bl.x,bl.y-14);specials.push({kind:'boxer',x:bx.x,y:bx.y,hx:bx.x,hy:bx.y,a:0,t:0,walk:0,col:'#c8282e',trs:'#a82024',zip:1,hair:'#1a1a1a',skin:'#a86a40',talkT:0})}
-  await new Promise(ok=>{const t=()=>window.R3?ok():setTimeout(t,40);t()});$('#startB').textContent='Building Bermondsey';await new Promise(r=>setTimeout(r,30));await Promise.race([WXREADY,new Promise(r=>setTimeout(r,2200))]);R3.build(WD);
+  await new Promise(ok=>{const t=()=>window.R3?ok():setTimeout(t,40);t()});$('#startB').textContent='Building Bermondsey';await new Promise(r=>setTimeout(r,30));await Promise.race([WXREADY,new Promise(r=>setTimeout(r,2200))]);R3.build(WD);R3.warm&&R3.warm();
   if(!hadSave){S.x=P.flat.x;S.y=P.flat.y}pl.x=S.x;pl.y=S.y;
   TCOLS=Math.ceil(W*2/512);TROWS=Math.ceil(H*2/512);ready=true;$('#startB').disabled=false;$('#startB').textContent=hadSave?'Continue':'Start';$('#title').classList.add('ready')}
 let MALTBY=null;

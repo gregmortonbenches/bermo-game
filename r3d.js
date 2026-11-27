@@ -3,6 +3,7 @@ import * as THREE from 'three';
 const K=1/1.3,PI=Math.PI,R=Math.random,hyp=Math.hypot,cl=(v,a,b)=>v<a?a:v>b?b:v;
 const mob=matchMedia('(pointer:coarse)').matches;
 const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c3'),antialias:!mob,powerPreference:'high-performance'});
+renderer.domElement.addEventListener('webglcontextrestored',()=>location.reload());/* CPU copies of static geometry are released after upload, so a lost GPU context can only be recovered by reloading */
 renderer.setPixelRatio(Math.min(devicePixelRatio,mob?1.5:1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(62,1,.3,3200);
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?74:60;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();
@@ -114,7 +115,7 @@ const F32=x=>x&&x.done?x.done():x;
 const GB=()=>({p:new FA,n:new FA,u:new FA,c:new FA});let TINT=[1,1,1];
 function tri(G,a,b,c,n,ua,ub,uc){G.p.push(...a,...b,...c);G.n.push(...n,...n,...n);G.u.push(...ua,...ub,...uc);G.c.push(...TINT,...TINT,...TINT)}
 function quad(G,a,b,c,d,n,u0,u1,v0,v1){tri(G,a,b,c,n,[u0,v0],[u1,v0],[u1,v1]);tri(G,a,c,d,n,[u0,v0],[u1,v1],[u0,v1])}
-function mesh(G,mat,shadow=true,recv=true){if(!G.p.length)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(G.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(G.n),3));g.setAttribute('uv',new THREE.Float32BufferAttribute(F32(G.u),2));if(mat.vertexColors&&G.c.length==G.p.length)g.setAttribute('color',new THREE.Float32BufferAttribute(F32(G.c),3));g.computeBoundingSphere();const m=new THREE.Mesh(g,mat);m.castShadow=shadow;m.receiveShadow=recv;m.matrixAutoUpdate=false;scene.add(m);return m}
+function mesh(G,mat,shadow=true,recv=true){if(!G.p.length)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(G.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(G.n),3));g.setAttribute('uv',new THREE.Float32BufferAttribute(F32(G.u),2));if(mat.vertexColors&&G.c.length==G.p.length)g.setAttribute('color',new THREE.Float32BufferAttribute(F32(G.c),3));g.computeBoundingSphere();/* static world: once the GPU has the data, drop the CPU copy (about half of ~250 MB of vertices); iPhones kill the tab near 1 GB */for(const k in g.attributes)g.attributes[k].onUpload(function(){this.array=null});const m=new THREE.Mesh(g,mat);m.castShadow=shadow;m.receiveShadow=recv;m.matrixAutoUpdate=false;scene.add(m);return m}
 const pl2=f=>{const o=[];for(let i=0;i<f.length;i+=2)o.push([f[i]*K,f[i+1]*K]);return o};
 function inPoly(x,z,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,zi]=P[i],[xj,zj]=P[j];if((zi>z)!=(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)c=!c}return c}
 function flat(G,P,y,s){const v=P.map(p=>new THREE.Vector2(p[0],p[1]));let t;try{t=THREE.ShapeUtils.triangulateShape(v,[])}catch(e){return}for(const [a,b,c] of t)tri(G,[P[a][0],y,P[a][1]],[P[c][0],y,P[c][1]],[P[b][0],y,P[b][1]],[0,1,0],[P[a][0]/s,P[a][1]/s],[P[c][0]/s,P[c][1]/s],[P[b][0]/s,P[b][1]/s])}
@@ -1136,4 +1137,6 @@ function project(x,y,h){_v.set(x*K,h,y*K).project(camera);if(_v.z>1)return null;
 const PKL=[];const zeroM=new THREE.Matrix4().makeScale(0,0,0);
 function takeParked(i){const p=PKL[i];if(!p||p.gone)return;p.gone=true;p.m.setMatrixAt(p.i,zeroM);p.m.instanceMatrix.needsUpdate=true;const c=Math.cos(p.a),sn=Math.sin(p.a),x=p.x*K,z=p.y*K;for(let a=-1.9;a<=1.9;a+=.475)for(let b=-.6;b<=.6;b+=.3){const X=((x+c*a-sn*b)/K)|0,Y=((z+sn*a+c*b)/K)|0;if(X>=0&&Y>=0&&X<W&&Y<H)FB[Y*W+X]=0}}
 const keyMesh=()=>{const V=VB();addBox(V,.12,.02,.12,0,.02,0,'#c8c8d0');addBox(V,.2,.02,.05,.1,.02,0,'#e8c020');addBox(V,.03,.02,.06,.17,.02,.04,'#e8c020');return vmesh(V,false)};
-window.R3={build,render,project,roofAt,fx:fxAdd,parked:()=>PKL,take:takeParked,info:()=>({...renderer.info.render,geo:renderer.info.memory.geometries})};
+/* one frame with culling off so every mesh uploads to the GPU now and releases its CPU copy (three.js only uploads what is drawn) */
+function warm(){const ms=[];scene.traverse(o=>{if(o.isMesh&&o.frustumCulled){o.frustumCulled=false;ms.push(o)}});try{renderer.render(scene,camera)}catch(e){console.warn('warm',e)}finally{for(const o of ms)o.frustumCulled=true}}
+window.R3={build,warm,render,project,roofAt,fx:fxAdd,parked:()=>PKL,take:takeParked,info:()=>({...renderer.info.render,geo:renderer.info.memory.geometries})};

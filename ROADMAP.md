@@ -163,3 +163,6 @@ Reference-only visits (West Lane / Bermondsey Wall East, Webb Street, Old Kent R
 
 ## Thorburn Square (27 Nov 2026)
 OSM had the whole estate as one solid 8,800 m2 "apartments" slab, so the courtyard and St Anne's Church were buried under a flat roof and unreachable. Now: four blocks (13 m deep, LiDAR height about 10.4 m) around an open green courtyard with 16 trees, church and hall as before, and a gateway through the north block. `grid.png` opened inside (653 cells grass, 13 cells gate). Gate position is a guess; the aerial view did not show where the real entrances are. Pre-edit copies were /tmp only; git history has the originals.
+
+## Memory, round two (27 Nov 2026)
+Phone reported memory trouble again. Headless JS heap was unchanged (about 102 MB) but that metric excludes typed arrays. Measured 7.6M vertices, about 250 MB of vertex data held twice (CPU and GPU). Today's LiDAR roofs and detail added about 3% (+208k vertices). Fix: release CPU copies after upload plus a one-off warm-up frame. Not fixed: peak during build (arrays all exist before first upload). Next ideas if it still fails: Int8 normals, Float16 uv, merge or reduce per-window geometry, lower draw detail on phones.
