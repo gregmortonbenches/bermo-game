@@ -146,7 +146,7 @@ function vmesh(V,shadow=true){const m=new THREE.Mesh(vgeo(V),MAT.vc);m.castShado
 function snap(x,y,max){const ok=(X,Y)=>{const t=tAt(X,Y);return(t==0||t==5||t==6)&&!FB[(Y|0)*W+(X|0)]};if(ok(x,y))return[x,y];for(let r=1;r<=max;r+=1)for(let k=0;k<16;k++){const a=k/16*PI*2,X=x+Math.cos(a)*r,Y=y+Math.sin(a)*r;if(ok(X,Y))return[X,Y]}return null}
 function toRoad(x,y){let best=null;for(let r=2;r<=16;r+=2){for(let k=0;k<16;k++){const a=k/16*PI*2,t=tAt(x+Math.cos(a)*r,y+Math.sin(a)*r);if(t==1||t==7){best=a;break}}if(best!==null)return best}return null}
 const BELMAT2=new THREE.MeshLambertMaterial({color:0x2a5ad8,emissive:0x3a7aff,emissiveIntensity:1});
-const BELISHA=[],BELMAT=new THREE.MeshLambertMaterial({color:0xffa020,emissive:0xff9010,emissiveIntensity:.8}),GARD=[],DECKS=[],BALC=[],TBT={},CHIM=[],HOIST=[],MODELLED=new Set(['HMS Belfast','City Hall','Southwark Park Bandstand']);
+const BELISHA=[],BELMAT=new THREE.MeshLambertMaterial({color:0xffa020,emissive:0xff9010,emissiveIntensity:.8}),GARD=[],DECKS=[],BALC=[],TBT={},CHIM=[],HOIST=[],TIES=[],MODELLED=new Set(['HMS Belfast','City Hall','Southwark Park Bandstand']);
 function obb(P,minR=.8){let area=0;for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length];area+=a[0]*b[1]-b[0]*a[1]}area=Math.abs(area)/2;let best=null;
   for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz);if(L<1)continue;const ux=dx/L,uz=dz/L,vx=-uz,vz=ux;let u0=1e9,u1=-1e9,v0=1e9,v1=-1e9;
     for(const p of P){const u=p[0]*ux+p[1]*uz,v=p[0]*vx+p[1]*vz;if(u<u0)u0=u;if(u>u1)u1=u;if(v<v0)v0=v;if(v>v1)v1=v}const ar=(u1-u0)*(v1-v0);if(!best||ar<best.ar)best={ar,ux,uz,vx,vz,u0,u1,v0,v1}}
@@ -229,7 +229,8 @@ function build(WD){
       if(res){const o=obb(P,0);if(o){const n=Math.max(1,Math.round((o.u1-o.u0)/6)),vm=(o.v0+o.v1)/2,ry=Math.atan2(-o.uz,o.ux);for(let k=0;k<n;k++){const u=o.u0+(k+.5)*(o.u1-o.u0)/n,chx=o.ux*u+o.vx*vm,chz=o.uz*u+o.vz*vm;if(inPoly(chx,chz,P))CHIM.push([chx,h+.6,chz,wk,ry]);else R3DBG.chimSkip=(R3DBG.chimSkip||0)+1}}}}
     if(wk=='flats'&&longest&&longest.L>14&&h>=8&&h<=24&&!isShop)DECKS.push([longest,h]);
     if((wk=='modr'||wk=='clad')&&longest&&longest.L>10&&h>=8)BALC.push([longest,h]);
-    if(wk=='ware'&&longest&&longest.L>9&&h>9){const u=6.2,x=longest.x0+longest.dx*u,z=longest.z0+longest.dz*u;HOIST.push([x,h-.9,z,longest.nx,longest.nz])}}
+    if(wk=='ware'&&longest&&longest.L>9&&h>9){const u=6.2,x=longest.x0+longest.dx*u,z=longest.z0+longest.dz*u;HOIST.push([x,h-.9,z,longest.nx,longest.nz])}
+    if(wk=='ware'&&longest&&longest.L>6&&h>6)TIES.push([longest.x0,longest.z0,longest.dx,longest.dz,longest.L,longest.nx,longest.nz,h])}
   TINT=[1,1,1];
   // railway viaducts, open where roads pass under
   // the railway viaduct as one continuous structure (union of all track corridors and arch blocks), with real underpasses where roads go through
@@ -608,6 +609,9 @@ function build(WD){
      window.R3DBG&&(R3DBG.fv=R3DBG.fv||[]).push([nm,cx,cz,nx,nz,w]);nfr++}
    window.R3DBG&&(R3DBG.fronts=nfr,R3DBG.fb=(x,z)=>FB[((z/K)|0)*W+((x/K)|0)])}
   for(const [x,y,z,wk,ry] of CHIM){const V=fv(x,z),col=wk=='red'?'#8a4232':wk=='paint'?'#e8e2d4':'#a88a5c';addBox(V,.55,1.7,1,x,y+.2,z,col,ry);addBox(V,.62,.12,1.06,x,y+1.08,z,'#d8d0c0',ry);for(const s of [-.25,.25])addBox(V,.17,.38,.17,x-Math.sin(ry)*s,y+1.32,z-Math.cos(ry)*s,'#c0603a',ry)}
+  R3DBG.ties=TIES.map(t=>[t[0]*1.3,t[1]*1.3,t[4]|0,t[7]|0]);
+  /* Victorian warehouse wall-tie plates: rows of small dark-red plates between floors (seen as a pattern on Bermondsey Wall East, not copied from any one wall) */
+  for(const [x0,z0,dx,dz,L,nx,nz,h] of TIES){const V=fv(x0+dx*L/2,z0+dz*L/2),ry=Math.atan2(nx,nz);let row=0;for(let y=3.4;y<h-1.2;y+=3.6,row++)for(let u=1.6+(row%2)*2.2;u<L-1.2;u+=4.4)addBox(V,.36,.36,.07,x0+dx*u+nx*.035,y,z0+dz*u+nz*.035,'#222020',ry)}
   for(const [x,y,z,nx,nz] of HOIST){const V=fv(x,z);addBox(V,.3,.3,1.6,x+nx*.7,y,z+nz*.7,'#2a2a2a',Math.atan2(nx,nz));addBox(V,.04,1.2,.04,x+nx*1.4,y-.7,z+nz*1.4,'#555');addBox(V,.2,.25,.15,x+nx*1.4,y-1.35,z+nz*1.4,'#333')}
   for(let n=0;n<ADJ.length;n++){if(ADJ[n].length<3)continue;const [jx,jy]=D.nodes[n];for(let k=0;k<4;k++){if(R()<.35)continue;const a=PI/4+k*PI/2;let X=jx,Y=jy,ok=false;for(let r=4;r<26;r+=1.5){X=jx+Math.cos(a)*r;Y=jy+Math.sin(a)*r;const t=tAt(X,Y);if(t==0&&!FB[(Y|0)*W+(X|0)]){ok=true;break}if(t!=1&&t!=7)break}
     if(!ok)continue;X+=Math.cos(a)*1.2;Y+=Math.sin(a)*1.2;const mx=X*K,mz=Y*K,V=fv(mx,mz);addBox(V,.2,.95,.2,mx,.48,mz,'#1a1a1c');addBox(V,.26,.08,.26,mx,.8,mz,'#b89030')}}

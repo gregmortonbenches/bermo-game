@@ -157,3 +157,6 @@ Building heights in `world3d.json` now come from Environment Agency open LiDAR (
 - Footprint-vs-LiDAR overlap showed the game map drifts from the BNG grid: north-south shift runs from about -8 m (south edge) to +3 m (north edge), east-west is a steady +1 m. The pipeline now applies `row' = row + 0.0055*row - 9.4`, `E + 1` (see tools/lidar/heights.py, roofs.py). Overlap 0.330 -> 0.381, peaking at zero shift. Heights re-run: 4,166 buildings now take a LiDAR height (was 3,516), LiDAR vs OSM r = 0.92.
 - Roof shapes: world3d.json building tuples gain element 11 (`rf`): -1 = flat in LiDAR (2,016), >0 = measured ridge rise in m (478 pitched), 0 = not measured (old guess). r3d.js uses it for hip roofs. Conservative on purpose; ambiguous roofs keep the old rule.
 - Measured, not seen: how it looks street by street on a phone.
+
+## Street View spot checks (27 Nov 2026)
+Reference-only visits (West Lane / Bermondsey Wall East, Webb Street, Old Kent Road). Done: dark cast-iron wall-tie plates in rows on warehouse walls (`TIES` in r3d.js). Noted, not yet done: Thames Path fingerposts, white-on-black street name plates on poles, double yellow lines at kerbs, tactile paving at crossings, steep-gabled modern infill housing (Webb St).
