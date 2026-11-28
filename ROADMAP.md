@@ -195,3 +195,10 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 
 ## Birthday biplane (2026-11-28)
 - A Sopwith Camel-style biplane towing a "Happy Birthday Sam!" banner (Greg asked for it) circles at about 40 m, passing some 40 m from the player every 45 s or so; a one-time "Look up!" toast the first time it comes close. `biplaneStep` in r3d.js; `DBGPLANE=1` holds it still for tests. No engine sound.
+
+## Light and shadow (2026-11-28)
+- The sun is now where the real sun is over Bermondsey for the date and time: shadows point north at midday, run long in winter and in the evening, and the sky goes golden and dark at the real sunset (about 3:55 pm in late November, 9:20 pm at midsummer) instead of a fixed clock.
+- The shadow area sits a little ahead of where the camera looks, and moves in whole shadow-map steps so its edges don't shimmer.
+- Exposure opens up part of the way when the sun is low, so winter days aren't gloomy.
+- Contact shadows: a soft dark band on the ground round the foot of every building, and walls a little darker at the foot. About 210k extra vertices (~7 MB packed), loaded in pieces like the rest.
+- Next ideas: soft-edged shadow fade at the edge of the shadow area; darker undersides of trees; building shadows beyond the shadow area from the helicopter.

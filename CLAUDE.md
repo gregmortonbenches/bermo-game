@@ -31,6 +31,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 
 ## Weather
 Live London weather from Open-Meteo is read in js/life.js (`WX`, `wxNow()`); it falls back to the old date rule if blocked. Test with `DBGWX`, `DBGH` (hour) and `DBGDOW` (day of week).
+The sun is the real one for the date and time (`sunAt()` in r3d.js, London 51.5 N): its height picks the sky colours via `sunHour()` and the old `AMB` table, and its direction sets the shadows. `DBGH` is the London hour on today's date; to test a season, fix the Date.
 
 ## Radio and parachute
 - `js/radio.js`: car radio from the Radio Browser directory (BAG menu, T = next station). Plays in a vehicle and as headphones on foot, silences the jazz.
