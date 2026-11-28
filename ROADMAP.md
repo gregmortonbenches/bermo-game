@@ -202,3 +202,8 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 - Exposure opens up part of the way when the sun is low, so winter days aren't gloomy.
 - Contact shadows: a soft dark band on the ground round the foot of every building, and walls a little darker at the foot. About 210k extra vertices (~7 MB packed), loaded in pieces like the rest.
 - Next ideas: soft-edged shadow fade at the edge of the shadow area; darker undersides of trees; building shadows beyond the shadow area from the helicopter.
+
+## Parachute camera and road markings (2026-11-28)
+- Under the parachute the camera now comes down with you (it used to stay at street level), a little further back so the canopy is in view.
+- Dual carriageways (Jamaica Road, Old Kent Road, Tower Bridge Road...) are detected from OpenStreetMap one-way pairs: red or yellow lines only on the kerb side, a solid white line by the central reservation, and a dashed lane line on two-lane one-way roads.
+- Zebra crossings are snapped to where the crossing is on the road and both Belisha beacons stand on the pavement (several used to sit in the middle of junctions); white zigzags either side, and centre and yellow lines stop there. 3 of 52 still could not be placed and stay where they were.

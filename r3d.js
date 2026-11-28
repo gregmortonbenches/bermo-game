@@ -245,14 +245,39 @@ function build(WD){
   for(const r of roads){const b=r.p[0];ribbon(bk(r.cob?'cobble':'road',b[0],b[1]),r.p,r.w,r.cob?.052:.05,0,true)}
   /* road markings stop where they run into another road's carriageway (junction mouths), instead of carrying on across it */
   const RSEG=new Map(),RC=16,NOCUT=new Set(['pedestrian','track','footway','path','cycleway','steps','bridleway']);roads.forEach((r,ri)=>{if(NOCUT.has(r.c))return;const h=r.w/2;for(let i=0;i<r.p.length-1;i++){const [x0,z0]=r.p[i],[x1,z1]=r.p[i+1];for(let cx=Math.floor((Math.min(x0,x1)-h)/RC);cx<=Math.floor((Math.max(x0,x1)+h)/RC);cx++)for(let cz=Math.floor((Math.min(z0,z1)-h)/RC);cz<=Math.floor((Math.max(z0,z1)+h)/RC);cz++){const k=cx+','+cz;let L=RSEG.get(k);if(!L)RSEG.set(k,L=[]);L.push([ri,x0,z0,x1,z1,h])}}});
+  /* which side of a one-way road (offsetLine's sign) faces a central reservation, if any: another one-way road running the opposite way alongside on the driver's right (traffic keeps left) for most of its length */
+  const MEDIAN=(r,ri)=>{if(!r.ow||r.p.length<2)return 0;const so=r.ow>0?1:-1;let n=0,hit=0;
+    for(let i=0;i<r.p.length-1;i++){const [x0,z0]=r.p[i],[x1,z1]=r.p[i+1],L=hyp(x1-x0,z1-z0);if(L<.5)continue;const dx=(x1-x0)/L,dz=(z1-z0)/L,nx=-dz*so,nz=dx*so;
+      for(let t=Math.min(4,L/2);t<L;t+=8){n++;const px=x0+dx*t,pz=z0+dz*t;let ok=false;
+        for(const d of [1.5,4,7,10]){const qx=px+nx*(r.w/2+d),qz=pz+nz*(r.w/2+d),C=RSEG.get(Math.floor(qx/RC)+','+Math.floor(qz/RC));if(!C)continue;
+          for(const [j,a0,b0,a1,b1,h] of C){if(j===ri||!roads[j].ow)continue;const vx=a1-a0,vz=b1-b0,l2=vx*vx+vz*vz;if(l2<1e-4)continue;const l=Math.sqrt(l2);if((vx*dx+vz*dz)/l*so*(roads[j].ow>0?1:-1)>-.8)continue;/* traffic on the other side must run the opposite way */
+            const u=Math.max(0,Math.min(1,((qx-a0)*vx+(qz-b0)*vz)/l2));if(hyp(qx-a0-vx*u,qz-b0-vz*u)<h+.5){ok=true;break}}if(ok)break}if(ok)hit++}}
+    const m=n&&hit/n>=.4?so:0;if(m)(R3DBG.median=R3DBG.median||[]).push(r.nm);return m};
   const inOther=(x,z,ri,dx,dz)=>{const L=RSEG.get(Math.floor(x/RC)+','+Math.floor(z/RC));if(!L)return false;for(const [j,x0,z0,x1,z1,h] of L){if(j===ri)continue;const vx=x1-x0,vz=z1-z0,l2=vx*vx+vz*vz;if(l2<1e-4)continue;const t=Math.max(0,Math.min(1,((x-x0)*vx+(z-z0)*vz)/l2)),ex=x0+vx*t-x,ez=z0+vz*t-z;if(ex*ex+ez*ez<(h+.15)*(h+.15)&&Math.abs(vx*dx+vz*dz)/Math.sqrt(l2)<.8)return true}return false};/* a road running the same way (the next piece of the same street) never cuts */
   const clipM=(pts,ri)=>{const out=[];let cur=[];const flush=()=>{if(cur.length>1)out.push(cur);cur=[]};for(let i=0;i<pts.length-1;i++){const [x0,z0]=pts[i],[x1,z1]=pts[i+1],L=hyp(x1-x0,z1-z0);if(L<.01)continue;const dx=(x1-x0)/L,dz=(z1-z0)/L,n=Math.max(1,Math.ceil(L/.8));for(let k=(i==0?0:1);k<=n;k++){const t=k/n,x=x0+(x1-x0)*t,z=z0+(z1-z0)*t;if(inOther(x,z,ri,dx,dz))flush();else cur.push([x,z])}}flush();return out};
-  const mark=(G,pts,ri,w,y,us)=>{for(const c of clipM(pts,ri))ribbon(G,c,w,y,us,false)};
-  roads.forEach((r,ri)=>{if(r.cob||['service','pedestrian','track','living_street'].includes(r.c))return;const b=r.p[0];for(const s of [1,-1])mark(bk('kerb',b[0],b[1]),offsetLine(r.p,s*(r.w/2-.12)),ri,.25,.055,0);
+  /* zebra crossings (same snapping as the stripes further down): painted lines stop either side of them and white zigzags take over, as on UK roads */
+  /* zebra crossings: the mapped points are rough (some fall in the middle of a junction), so each one is snapped to a nearby road and slid along it, up to about 10 m,
+     to where the crossing is on the carriageway and both Belisha beacons stand on the pavement. Used for the stripes, beacons, tactile paving and the markings below */
+  const ZEBS=[],walkT=(x,y)=>{const t=tAt(x,y);return t==0||t==5||t==6},roadT=(x,y)=>{const t=tAt(x,y);return t==1||t==7};
+  for(const [zx,zy] of (WD.mly&&WD.mly.zebra)||[]){const C=[];WD.r.forEach((r,j)=>{if(r[2]=='foot'||r[2]=='pedestrian'||NOCUT.has(r[2]))return;const f=r[0];for(let i=0;i<f.length-2;i+=2){const x0=f[i],y0=f[i+1],x1=f[i+2],y1=f[i+3],vx=x1-x0,vy=y1-y0,l=vx*vx+vy*vy||1,t=cl(((zx-x0)*vx+(zy-y0)*vy)/l,0,1),d=hyp(x0+vx*t-zx,y0+vy*t-zy);if(d<14){const L=Math.sqrt(l);C.push({x:x0+vx*t,y:y0+vy*t,ux:vx/L,uy:vy/L,w:r[1],j,d,x0,y0,x1,y1})}}});
+    let best=null,bs=1e9;for(const c of C){const e=c.w/2+1.1*1.3;for(const sl of [0,2,-2,4,-4,6,-6,8,-8,10,-10,13,-13]){const x=c.x+c.ux*sl,y=c.y+c.uy*sl,nx=-c.uy,ny=c.ux;
+        if(!roadT(x,y)||!walkT(x+nx*e,y+ny*e)||!walkT(x-nx*e,y-ny*e))continue;const sc=c.d+Math.abs(sl)*.6;if(sc<bs){bs=sc;best={...c,x,y}}break}}
+    if(!best&&C.length){best=C.reduce((a,b)=>b.d<a.d?b:a);R3DBG.zebMiss=(R3DBG.zebMiss||0)+1}
+    if(best)ZEBS.push({X:best.x*K,Z:best.y*K,ux:best.ux,uz:best.uy,hw:best.w*K/2,j:best.j})}
+  const ZZ=12.5,inZeb=(x,z)=>ZEBS.some(q=>{const a=(x-q.X)*q.ux+(z-q.Z)*q.uz,c=(x-q.X)*-q.uz+(z-q.Z)*q.ux;return Math.abs(a)<ZZ&&Math.abs(c)<q.hw+1.2});
+  for(const q of ZEBS){const r=roads[q.j];if(!r||NOCUT.has(r.c)||r.c=='service')continue;const nx=-q.uz,nz=q.ux,offs=[q.hw-.35,-(q.hw-.35)];if(!r.ow&&r.w>5.5)offs.push(0);
+    for(const s of [1,-1])for(const o of offs){const P=[];for(let a=2.2,k=0;a<=ZZ;a+=1,k++){const w=o+(k%2?.22:-.22)*(o?Math.sign(o):1);P.push([q.X+q.ux*a*s+nx*w,q.Z+q.uz*a*s+nz*w])}for(const c of clipM(P,q.j)){let cur=[];for(const p of c){if(roadT(p[0]/K,p[1]/K))cur.push(p);else{if(cur.length>1)ribbon(bk('line',q.X,q.Z),cur,.1,.062,0,false);cur=[]}}if(cur.length>1)ribbon(bk('line',q.X,q.Z),cur,.1,.062,0,false)}}}/* zigzags stop where they would run into a junction or off the end of the road */
+  R3DBG.zebras=ZEBS.length;
+  const mark=(G,pts,ri,w,y,us,keep)=>{for(const c0 of clipM(pts,ri)){if(keep||!ZEBS.length){ribbon(G,c0,w,y,us,false);continue}let cur=[];for(const p of c0){if(inZeb(p[0],p[1])){if(cur.length>1)ribbon(G,cur,w,y,us,false);cur=[]}else cur.push(p)}if(cur.length>1)ribbon(G,cur,w,y,us,false)}};
+  roads.forEach((r,ri)=>{if(r.cob||['service','pedestrian','track','living_street'].includes(r.c))return;const b=r.p[0];for(const s of [1,-1])mark(bk('kerb',b[0],b[1]),offsetLine(r.p,s*(r.w/2-.12)),ri,.25,.055,0,true);
     if(!r.ow&&r.w>5.5){if(['trunk','primary','secondary','tertiary'].includes(r.c))mark(bk('line',b[0],b[1]),r.p,ri,.15,.06,6);else if(r.c=='residential'||r.c=='unclassified')mark(bk('line',b[0],b[1]),r.p,ri,.12,.06,9)}
     /* residential streets: double yellow kerb lines for the first ~10 m at each end (no parking within 10 m of a junction) */
     if((r.c=='residential'||r.c=='unclassified')&&r.w>5.5&&!r.ow){let tot=0;for(let i=1;i<r.p.length;i++)tot+=hyp(r.p[i][0]-r.p[i-1][0],r.p[i][1]-r.p[i-1][1]);if(tot>22){const Lh=Math.min(10,tot/2.6);for(const rev of [0,1]){const q=rev?[...r.p].reverse():r.p,seg=[q[0]];let acc=0;for(let i=1;i<q.length;i++){const d=hyp(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]);if(acc+d>=Lh){const t=(Lh-acc)/d;seg.push([q[i-1][0]+(q[i][0]-q[i-1][0])*t,q[i-1][1]+(q[i][1]-q[i-1][1])*t]);break}seg.push(q[i]);acc+=d}if(seg.length>1)for(const sd of [1,-1])for(const o of [.5,.75])mark(bk('yel',b[0],b[1]),offsetLine(seg,sd*(r.w/2-o)),ri,.1,.06,0)}}}
-    const tg=r.c=='trunk'||r.c=='trunk_link'?'red':['primary','secondary','tertiary','primary_link','secondary_link'].includes(r.c)?'yel':null;if(tg)for(const s of [1,-1])for(const o of [.5,.75])mark(bk(tg,b[0],b[1]),offsetLine(r.p,s*(r.w/2-o)),ri,.1,.06,0)});
+    const tg=r.c=='trunk'||r.c=='trunk_link'?'red':['primary','secondary','tertiary','primary_link','secondary_link'].includes(r.c)?'yel':null,med=MEDIAN(r,ri);
+    /* dual carriageways (Jamaica Road, Tower Bridge Road...): the red or yellow lines go along the kerb on the left only; the edge by the central reservation gets a solid white line instead */
+    if(tg)for(const s of [1,-1]){if(med&&s===med){mark(bk('line',b[0],b[1]),offsetLine(r.p,s*(r.w/2-.45)),ri,.15,.06,0);continue}for(const o of [.5,.75])mark(bk(tg,b[0],b[1]),offsetLine(r.p,s*(r.w/2-o)),ri,.1,.06,0)}
+    /* one-way roads wide enough for two lanes get a dashed lane line down the middle */
+    if(r.ow&&r.w>=7&&tg)mark(bk('line',b[0],b[1]),r.p,ri,.12,.06,4)});
   // cycle tracks, painted cycle lanes, bus lanes and their markings, from OpenStreetMap lane tags
   const glyph=(G,x,z,dx,dz,len,wid,y)=>{const nx=-dz,nz=dx,a=[x-dx*len/2-nx*wid/2,y,z-dz*len/2-nz*wid/2],b=[x+dx*len/2-nx*wid/2,y,z+dz*len/2-nz*wid/2],c=[x+dx*len/2+nx*wid/2,y,z+dz*len/2+nz*wid/2],d=[x-dx*len/2+nx*wid/2,y,z-dz*len/2+nz*wid/2];tri(G,a,b,c,[0,1,0],[1,0],[1,1],[0,1]);tri(G,a,c,d,[0,1,0],[1,0],[0,1],[0,0])};
   const along=(pts,step,first,fn)=>{let acc=0,next=first;for(let i=0;i<pts.length-1;i++){const [x0,z0]=pts[i],[x1,z1]=pts[i+1],L=hyp(x1-x0,z1-z0);if(L<.01)continue;const dx=(x1-x0)/L,dz=(z1-z0)/L;while(next<acc+L){const t=next-acc;fn(x0+dx*t,z0+dz*t,dx,dz);next+=step}acc+=L}};
@@ -430,16 +455,16 @@ function build(WD){
       quad(S20,[X+tx+ox,y0_,Z+tz+oz],[X-tx+ox,y0_,Z-tz+oz],[X-tx+ox,y1,Z-tz+oz],[X+tx+ox,y1,Z+tz+oz],[Math.cos(a),0,Math.sin(a)],0,1,0,1);quad(S20,[X-tx-ox,y0_,Z-tz-oz],[X+tx-ox,y0_,Z+tz-oz],[X+tx-ox,y1,Z+tz-oz],[X-tx-ox,y1,Z-tz-oz],[-Math.cos(a),0,-Math.sin(a)],0,1,0,1)}
     mesh(S20,new THREE.MeshLambertMaterial({map:s20,transparent:true,alphaTest:.5,side:THREE.DoubleSide}),false);
     // zebra crossings with Belisha beacons
-    const ZB=GB();BELISHA.length=0;for(const [zx,zy] of MLY.zebra){let best=null,bd=14;for(const r of WD.r){if(r[2]=='foot'||r[2]=='pedestrian')continue;const f=r[0];for(let i=0;i<f.length-2;i+=2){const x0=f[i],y0=f[i+1],x1=f[i+2],y1=f[i+3],vx=x1-x0,vy=y1-y0,l=vx*vx+vy*vy||1,t=cl(((zx-x0)*vx+(zy-y0)*vy)/l,0,1),d=hyp(x0+vx*t-zx,y0+vy*t-zy);if(d<bd){bd=d;const L=Math.sqrt(l);best={x:x0+vx*t,y:y0+vy*t,ux:vx/L,uy:vy/L,w:r[1]}}}}
-      if(!best)continue;const X=best.x*K,Z=best.y*K,ux=best.ux,uz=best.uy,nx=-uz,nz=ux,hw=best.w*K/2-.3;for(let c=-hw;c<hw-.3;c+=1){const a=[X+nx*c-ux*1.5,.07,Z+nz*c-uz*1.5],b=[X+nx*(c+.5)-ux*1.5,.07,Z+nz*(c+.5)-uz*1.5],d2=[X+nx*c+ux*1.5,.07,Z+nz*c+uz*1.5],e2=[X+nx*(c+.5)+ux*1.5,.07,Z+nz*(c+.5)+uz*1.5];quad(ZB,a,b,e2,d2,[0,1,0],0,1,0,1)}
+    const ZB=GB();BELISHA.length=0;for(const q of ZEBS){
+      const X=q.X,Z=q.Z,ux=q.ux,uz=q.uz,nx=-uz,nz=ux,hw=q.hw-.3;for(let c=-hw;c<hw-.3;c+=1){const a=[X+nx*c-ux*1.5,.07,Z+nz*c-uz*1.5],b=[X+nx*(c+.5)-ux*1.5,.07,Z+nz*(c+.5)-uz*1.5],d2=[X+nx*c+ux*1.5,.07,Z+nz*c+uz*1.5],e2=[X+nx*(c+.5)+ux*1.5,.07,Z+nz*(c+.5)+uz*1.5];quad(ZB,a,b,e2,d2,[0,1,0],0,1,0,1)}
       for(const s of [-1,1]){const bx=X+nx*s*(hw+1.1),bz=Z+nz*s*(hw+1.1),V=fv(bx,bz);for(let k=0;k<6;k++)addBox(V,.12,.45,.12,bx,.22+k*.45,bz,k%2?'#f0f0ea':'#1a1a1a');BELISHA.push([bx,2.95,bz])}}
     mesh(ZB,M2({color:0xf4f2ea,...PO(-4)}),false);
     if(BELISHA.length){const g=new THREE.InstancedMesh(new THREE.SphereGeometry(.24,10,8),BELMAT,BELISHA.length),mm2=new THREE.Matrix4();BELISHA.forEach((b,i)=>{mm2.makeTranslation(b[0],b[1],b[2]);g.setMatrixAt(i,mm2)});g.computeBoundingSphere();scene.add(g)}
     // tactile paving (red blister, controlled crossings) at both kerbs of each zebra, either side of the beacon; Thames Path fingerposts at the way ends
     {const TB=GB(),cv=document.createElement('canvas');cv.width=cv.height=64;const cx=cv.getContext('2d');cx.fillStyle='#d4584a';cx.fillRect(0,0,64,64);cx.fillStyle='#a8382e';for(let a=0;a<4;a++)for(let b=0;b<4;b++){cx.beginPath();cx.arc(8+a*16,8+b*16,3.2,0,7);cx.fill()}
      const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;let nT=0;
-     for(const [zx,zy] of MLY.zebra){let best=null,bd=14;for(const r of WD.r){if(r[2]=='foot'||r[2]=='pedestrian')continue;const f=r[0];for(let i2=0;i2<f.length-2;i2+=2){const x0=f[i2],y0=f[i2+1],x1=f[i2+2],y1=f[i2+3],vx=x1-x0,vy=y1-y0,l=vx*vx+vy*vy||1,t=cl(((zx-x0)*vx+(zy-y0)*vy)/l,0,1),d=hyp(x0+vx*t-zx,y0+vy*t-zy);if(d<bd){bd=d;const L=Math.sqrt(l);best={x:x0+vx*t,y:y0+vy*t,ux:vx/L,uy:vy/L,w:r[1]}}}}
-      if(!best)continue;const X=best.x*K,Z=best.y*K,ux=best.ux,uz=best.uy,nx=-uz,nz=ux,e=best.w*K/2;
+     for(const q of ZEBS){
+      const X=q.X,Z=q.Z,ux=q.ux,uz=q.uz,nx=-uz,nz=ux,e=q.hw;
       for(const s2 of[-1,1])for(const o of[-.9,.9]){const cx2=X+ux*o+nx*s2*(e+.55),cz2=Z+uz*o+nz*s2*(e+.55),hu=.42,hn=.55,P=(a,b)=>[cx2+ux*a+nx*b,.085,cz2+uz*a+nz*b];quad(TB,P(-hu,-hn),P(hu,-hn),P(hu,hn),P(-hu,hn),[0,1,0],0,1,0,1);nT++}}
      R3DBG.tactile=nT;if(nT)mesh(TB,M2({map:tx,...PO(-5)}),false);
      const fpS=new Set();let nF=0;for(const r of WD.r.filter(r=>r[3]=='Thames Path'||(r[3]=='Shad Thames'&&r[2]=='pedestrian'))){const p=pl2(r[0]);for(const [k,k2] of[[0,1],[p.length-1,p.length-2]]){const a=p[k],b=p[k2],dx=b[0]-a[0],dz=b[1]-a[1],L=hyp(dx,dz)||1,ux=dx/L,uz=dz/L,X=a[0]-uz*(r[1]*K/2+.5)+ux*1.2,Z=a[1]+ux*(r[1]*K/2+.5)+uz*1.2,V=fv(X,Z),ry=Math.atan2(ux,uz)+PI/2;if(tAt(X/K,Z/K)!=0)continue;{const kk=(X/6|0)+','+(Z/6|0);if(fpS.has(kk))continue;fpS.add(kk)}
@@ -447,7 +472,7 @@ function build(WD){
   }
   // parked cars along residential and minor streets, kept clear of junctions, crossings, stops and signals
   {const avoid=[];for(let n=0;n<ADJ.length;n++)if(ADJ[n].length!=2)avoid.push([D.nodes[n][0],D.nodes[n][1],14]);
-   if(MLY){for(const z of MLY.zebra)avoid.push([z[0],z[1],16]);for(const z of MLY.sig)avoid.push([z[0],z[1],16])}for(const b of D.furn.bus||[])avoid.push([b[0],b[1],20]);
+   if(MLY){for(const z of ZEBS)avoid.push([z.X/K,z.Z/K,16]);for(const z of MLY.sig)avoid.push([z[0],z[1],16])}for(const b of D.furn.bus||[])avoid.push([b[0],b[1],20]);
    const AV={};for(const a of avoid){const k=Math.floor(a[0]/40)+','+Math.floor(a[1]/40);(AV[k]=AV[k]||[]).push(a)}
    const near=(x,y)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const L=AV[(Math.floor(x/40)+i)+','+(Math.floor(y/40)+j)];if(L)for(const a of L)if(hyp(a[0]-x,a[1]-y)<a[2])return true}return false};
    const cg=(()=>{const V=VB(),L=VB();modernCar(V,L,4.25,1.82,'#ffffff','hatch');for(let k=0;k<L.p.length/3;k++){V.p.push(L.p.a[k*3],L.p.a[k*3+1],L.p.a[k*3+2]);V.n.push(L.n.a[k*3],L.n.a[k*3+1],L.n.a[k*3+2]);V.c.push(L.c.a[k*3]*.6,L.c.a[k*3+1]*.3,L.c.a[k*3+2]*.3)}const g=vgeo(V);g.userData.shared=1;return g})();
@@ -1220,7 +1245,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   if(started){CAM.yaw+=CAM.rx*2.5*dt;CAM.pitch=cl(CAM.pitch+CAM.ry*1.3*dt,.05,1.1);if(Math.abs(CAM.rx)>.05||Math.abs(CAM.ry)>.05)CAM.manual=1.4;CAM.manual-=dt;
     const mv=inCar?Math.abs(pl.car.v)>.03:(K_moving());if(CAM.manual<=0&&mv){const d=angD(p.a,CAM.yaw);if(inCar||Math.abs(d)<2.2)CAM.yaw+=d*Math.min(1,dt*(inCar?2.9-1.2*SPD:.9))}}
   else{CAM.yaw+=dt*.07}
-  const dist=(heliOn?20:inCar?(TWO[pl.car.type]?6.5:9)*(1+.22*SPD):5.2)/ZF*(started?1:7),ph=CAM.pitch+(heliOn?.15:0),ty=(heliOn?alt+2:inCar&&!TWO[pl.car.type]?1.6:1.5+(!inCar&&started?pl.z||0:0));
+  const dist=(heliOn?20:inCar?(TWO[pl.car.type]?6.5:9)*(1+.22*SPD):pl.chute&&started?8.5/* a little further back so the canopy is in view */:5.2)/ZF*(started?1:7),ph=CAM.pitch+(heliOn?.15:0),ty=(heliOn?alt+2:inCar&&!TWO[pl.car.type]?1.6:1.5+(!inCar&&started?(pl.z||0)+(pl.chute?pl.jz||0:0):0));/* under the parachute the camera comes down with you */
   let dd=dist;const ox=-Math.cos(CAM.yaw)*Math.cos(ph),oz=-Math.sin(CAM.yaw)*Math.cos(ph),oy=Math.sin(ph);
   if(started&&!heliOn&&!(pl.z>0)){for(let s=.6;s<dist;s+=.4){if(!camFree(px+ox*s,pz+oz*s)&&ty+oy*s<14){dd=Math.max(1.2,s-.5);break}}}
   const th=TH(px,pz);camPos.set(px+ox*dd,Math.max(.6,ty+oy*dd+(started?0:20))+th,pz+oz*dd);if(!started)camera.position.copy(camPos);else camera.position.lerp(camPos,Math.min(1,dt*(dd<dist?18:9)));camLook.set(px+(pl.car&&pl.car.v>0?Math.cos(p.a)*2.6*SPD:0),ty+th+(started?0:4),pz+(pl.car&&pl.car.v>0?Math.sin(p.a)*2.6*SPD:0));camera.lookAt(camLook);if(!window.DBGCAM){const fb=(innerWidth<innerHeight?74:60)+SPD*9;if(Math.abs(camera.fov-fb)>.05){camera.fov+=(fb-camera.fov)*Math.min(1,dt*3);camera.updateProjectionMatrix()}}if(started&&typeof shake=='number'&&shake>0){const a=Math.min(shake,8);camera.rotateZ((Math.random()-.5)*a*.012);camera.rotateX((Math.random()-.5)*a*.009);camera.rotateY((Math.random()-.5)*a*.009)}
