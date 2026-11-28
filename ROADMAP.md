@@ -214,3 +214,7 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 - The lowest few degrees of the sky are now exactly the fog colour, so fully fogged tall blocks no longer stand out as pale slabs.
 
 2026-11-28 Real bus routes (asked for by Greg): routes 1, 42, 47, 78, 188, 381, C10 and P12 follow their stop order (bustimes.org, read that day), wait about 4 s at each stop and show number and destination blinds; the driver says the next stop. Approximations: only stops the game has are used; the 1 and 381 hop between Rotherhithe New Road and Canada Water (the real way is just off the map); roads between stops are the shortest way on the game's streets. Three buses are about at a time. Rebuild data with `python3 tools/bus/build.py`.
+
+## Daylight bounce and zebra zigzags (2026-11-28, play-test round 26)
+- By day the hemisphere light's ground colour is now a pale bounce colour (most with a low winter sun), so shaded brick, parked cars and trunks read instead of going near black. Night and flat ground are unchanged.
+- Zebra zigzags (and the solid white line by dual-carriageway central reservations) were painted with the dashed 'line' material, which broke them into fragments. They use the solid pale paint now, and zigzags follow the road round bends.
