@@ -1,6 +1,6 @@
 import fs from 'fs';import {createRequire} from 'module';
 const require=createRequire('/tmp/');const acorn=require('acorn'),walk=require('acorn-walk');
-const dir=process.argv[2],order=['core','vehicles','player','world','audio','life','radio','chute','jobs','crew','ui','render','main'];
+const dir=process.argv[2],order=['core','perf','vehicles','player','world','audio','life','radio','chute','jobs','crew','ui','render','main'];
 const decl={},asts={};
 for(const [i,n] of order.entries()){const src=fs.readFileSync(`${dir}/js/${n}.js`,'utf8');
   const ast=acorn.parse(src,{ecmaVersion:'latest',sourceType:'script',locations:true});asts[n]=ast;

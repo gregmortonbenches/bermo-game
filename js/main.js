@@ -33,7 +33,7 @@ function step(f,dt){heliStep(f);if(fr%40==0)updateRoute();if(pl.car){carStep(f);
   dogStep(f);worldStep(f);if(fr%30==0)maintain();misUpdate(dt);bumpCD-=dt;shake=Math.max(0,shake-f*.3);if(fr%9==0)syncCrew()}
 function loop(t){requestAnimationFrame(loop);const ms=Math.min(50,t-lt);lt=t;const f=ms/16.67,dt=ms/1000;fr++;
   if(started&&!paused&&ready)step(f,dt);else if(!started)att+=ms;
-  sndUpdate(f);draw(f);if(fr%12==0)hud()}
+  perfTick(t);sndUpdate(f);draw(f);if(fr%12==0)hud()}
 setInterval(()=>{if(started)writeSave()},20000);setInterval(()=>{if(started)syncMember()},60000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started)writeSave()});addEventListener('pagehide',()=>{if(started)writeSave()});
 

@@ -4,7 +4,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 
 ## Layout
 - `index.html`: page shell, styles, ordered `<script src="js/...">` tags.
-- `js/` classic scripts sharing ONE global scope. Load order: core, vehicles, player, world, audio, life, radio, chute, jobs, crew, ui, render, main.
+- `js/` classic scripts sharing ONE global scope. Load order: core, perf, vehicles, player, world, audio, life, radio, chute, jobs, crew, ui, render, main.
   - Top-level code must not use symbols from later files (functions are fine once called later). `node tools/hazard.mjs .` checks this (run from the repo root). `tools/tester.py` is the Playwright tester (`python3 tools/tester.py OUTDIR 6`, set CHROME inside; serve the repo with `python3 -m http.server 8768`).
   - 2D pixel units, 1.3 px = 1 m. r3d.js converts with K = 1/1.3.
 - `r3d.js`: ES module three.js renderer. `world3d.json`, `data.json`, `mly.json`, `grid.png`, `map.png`, `bg.jpg`: data.

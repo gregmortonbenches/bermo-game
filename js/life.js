@@ -21,9 +21,9 @@ function shopOpenLine(sh){const x=shopHrs(sh[4]);return x?'Open until '+(x[1]>=2
 function marketsOn(pad=0){const{h:h0,dow}=lifeNow(),w=(d,a,b)=>dow==d&&h0>=a-pad&&h0<b+pad;return{maltby:w(5,17.5,21)||w(6,10,17)||w(0,11,16),antiques:w(5,6,14),blue:[1,2,3,4,5,6].some(d=>w(d,9,17)),spa:w(6,9,16)}}
 const anyMarket=()=>{const m=marketsOn();return m.maltby||m.antiques||m.blue||m.spa};
 /* how many pedestrians the streets should hold: quiet nights, commutes, busy weekend afternoons */
-function crowdTarget(){const{h,wk}=lifeNow();let n=h<5?7:h<7?12:h<9.5?(wk?18:36):h<16?(wk?34:28):h<19?(wk?30:38):h<22?26:h<24?16:7;if(anyMarket())n+=4;return n}
+function crowdTarget(){const{h,wk}=lifeNow();let n=h<5?7:h<7?12:h<9.5?(wk?18:36):h<16?(wk?34:28):h<19?(wk?30:38):h<22?26:h<24?16:7;if(anyMarket())n+=4;return Math.round(n*PERF.q.crowd)}
 /* and how many cars are on the move */
-function trafficTarget(){const{h,wk}=lifeNow();return Math.round(h<5?7:h<7?12:h<9.5?(wk?14:30):h<16?(wk?24:22):h<19?(wk?22:32):h<22?18:h<24?12:7)}
+function trafficTarget(){const{h,wk}=lifeNow();return Math.round(PERF.q.crowd*(h<5?7:h<7?12:h<9.5?(wk?14:30):h<16?(wk?24:22):h<19?(wk?22:32):h<22?18:h<24?12:7))}
 
 
 /* ---- weather: live London conditions from Open-Meteo (free, no key). Falls back to the old date-based rain if the request is blocked or fails. ----

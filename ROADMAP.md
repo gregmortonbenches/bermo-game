@@ -183,3 +183,6 @@ The terrain shader only lifts vertices, so big flat triangles (park grass, ponds
 
 ## Terrain lift: world space (2026-11-28)
 The first terrain shader added the height to each mesh's local y, so rotated parts (pedestrians' limbs, tree branches, other tilted meshes) flew sideways, and `litWindows` replaced the patch altogether, so textured walls stayed at river level while roofs and doors rose (floating roofs, sunk ground floors). `terrPatch(sh)` now lifts in world space after the view transform (shadows and sprites too). Any material with its own `onBeforeCompile` must call `terrPatch(sh)` first, unless it is meant to stay level (the skyline glass).
+
+## 5. Phones and loading: first step (2026-11-28)
+`js/perf.js`: Bag menu has `Quality` (auto, high, low) and `Speed readout` (also `?perf` in the URL). Low: pixel ratio 1, no shadows, fog 65% so view is shorter, about half the people and traffic, and static chunks and instanced props beyond the fog are not drawn. Auto starts full and steps down after 5 s under 24 fps; next visit it tries one level higher. The readout notes when the last visit ended without closing properly (a likely memory kill). None of this lowers geometry memory. Still to do: Greg's real-phone numbers, slimmer geometry, map tiles, earlier playable start.
