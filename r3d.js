@@ -10,13 +10,18 @@ function terrInit(T){let d,nx=1,ny=1;if(T&&T.b64){nx=T.n[0];ny=T.n[1];const s=at
 function TH(x,z){if(!TERR.d||!TERR.has)return 0;const nx=TERR.n.x,ny=TERR.n.y,fx=cl(x/TERR.cell,0,nx-1.001),fz=cl(z/TERR.cell,0,ny-1.001),i=fx|0,j=fz|0,a=fx-i,b=fz-j,D=TERR.d,v=(jj,ii)=>D[jj*nx+ii];
   return TERR.tmin+TERR.ts/255*((v(j,i)*(1-a)+v(j,i+1)*a)*(1-b)+(v(j+1,i)*(1-a)+v(j+1,i+1)*a)*b)}
 THREE.Material.prototype.customProgramCacheKey=function(){return (this.userData&&this.userData.noTerrain?'n':'t')+this.onBeforeCompile.toString()};
-THREE.Material.prototype.onBeforeCompile=function(sh){if(this.userData&&this.userData.noTerrain)return;Object.assign(sh.uniforms,TERR.u);
-  sh.vertexShader=sh.vertexShader.replace(/void\s+main\s*\(\s*\)/,'uniform sampler2D tHM;uniform vec2 tHN;uniform vec3 tHC;\nvoid main()').replace('#include <begin_vertex>',`#include <begin_vertex>
-{vec4 tp_=vec4(transformed,1.0);float ts_=length(modelMatrix[1].xyz);
+/* The lift is applied in world space, after the model, instance and view transforms: adding it to the local y threw rotated parts (legs, arms, branches) off sideways. Any material with its own onBeforeCompile must call terrPatch(sh) first. */
+function terrPatch(sh){Object.assign(sh.uniforms,TERR.u);
+  sh.vertexShader=sh.vertexShader.replace(/void\s+main\s*\(\s*\)/,'uniform sampler2D tHM;uniform vec2 tHN;uniform vec3 tHC;float terr_=0.0;\nfloat terrH_(vec2 p){return tHC.y+tHC.z*texture2D(tHM,(p/tHC.x+.5)/tHN).r;}\nvoid main()').replace('#include <project_vertex>',`#include <project_vertex>
+{vec4 tp_=vec4(transformed,1.0);
 #ifdef USE_INSTANCING
-tp_=instanceMatrix*tp_;ts_*=length(instanceMatrix[1].xyz);
+tp_=instanceMatrix*tp_;
 #endif
-tp_=modelMatrix*tp_;transformed.y+=(tHC.y+tHC.z*texture2D(tHM,(tp_.xz/tHC.x+.5)/tHN).r)/max(ts_,.001);}`)};
+tp_=modelMatrix*tp_;terr_=terrH_(tp_.xz);mvPosition+=viewMatrix*vec4(0.0,terr_,0.0,0.0);gl_Position=projectionMatrix*mvPosition;}`).replace('#include <worldpos_vertex>',`#include <worldpos_vertex>
+#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0
+worldPosition.y+=terr_;
+#endif`).replace('vec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );',/* sprites: signs and pins */'vec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );\nmvPosition+=viewMatrix*vec4(0.0,terrH_(modelMatrix[3].xz),0.0,0.0);')}
+THREE.Material.prototype.onBeforeCompile=function(sh){if(this.userData&&this.userData.noTerrain)return;terrPatch(sh)};
 const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c3'),antialias:!mob,powerPreference:'high-performance'});
 renderer.domElement.addEventListener('webglcontextrestored',()=>location.reload());/* CPU copies of static geometry are released after upload, so a lost GPU context can only be recovered by reloading */
 renderer.setPixelRatio(Math.min(devicePixelRatio,mob?1.5:1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
@@ -98,7 +103,7 @@ const cobT=ctex(256,256,(g,w,h)=>{g.fillStyle='#4a4640';g.fillRect(0,0,w,h);for(
 const dash=ctex(64,16,(g,w,h)=>{g.clearRect(0,0,w,h);g.fillStyle='#f4f2ea';g.fillRect(0,0,w*.55,h)});
 const M=o=>new THREE.MeshLambertMaterial(o),M2=o=>M({...o,side:THREE.DoubleSide}),PO=n=>({polygonOffset:true,polygonOffsetFactor:n,polygonOffsetUnits:n});
 // night windows: only the window panes glow (not the brick), and each window is on or off and warm or cool at random
-function litWindows(sh){sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+function litWindows(sh){terrPatch(sh);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;float gP=0.0;').replace('#include <map_fragment>',`#include <map_fragment>
     {vec4 lc=texture2D(emissiveMap,vEmissiveMapUv),oc=texture2D(map,vMapUv);float w=smoothstep(.12,.35,length(lc.rgb-oc.rgb));
      float cl=floor(vMapUv.x+.001)*17.0+floor(vMapUv.y+.001)*131.0+floor(vWP.x*.013)*7.0+floor(vWP.z*.013)*3.0;float r=fract(sin(cl*39.346)*11.135*1000.0),r2=fract(sin(cl*7.13)*5713.1);
@@ -114,7 +119,7 @@ function litWindows(sh){sh.vertexShader=sh.vertexShader.replace('#include <commo
     }/* blinds: only pulled part-way down from the top of the pane, with slats, instead of a flat panel over the whole window */`).replace('#include <emissivemap_fragment>',`
     vec4 litC=texture2D(emissiveMap,vEmissiveMapUv);vec4 offC=texture2D(map,vMapUv);float win=smoothstep(.12,.35,length(litC.rgb-offC.rgb));
     float cell=floor(vMapUv.x+.001)*17.0+floor(vMapUv.y+.001)*131.0+floor(vWP.x*.013)*7.0+floor(vWP.z*.013)*3.0;float h=fract(sin(cell*12.9898)*43758.5453),h2=fract(sin(cell*78.233)*24634.6345);
-    vec3 tint=h2<.25?vec3(.75,.85,1.0):h2<.35?vec3(1.0,.75,.55):vec3(1.0);totalEmissiveRadiance*=litC.rgb*win*step(h,.42)*tint*(1.0-gP);`)}
+    vec3 tint=h2<.25?vec3(.75,.85,1.0):h2<.35?vec3(1.0,.75,.55):vec3(1.0);totalEmissiveRadiance*=litC.rgb*win*step(h,.42)*tint*mix(vec3(1.0),diffuseColor.rgb*.8,gP);/* a plant in a lit window glows a dim leaf green, not a black spider shape */`)}
 const WK=['stock','red','ware','flats','modern','church','lib','ftm','white','alaska','jchurch','paint','modr','clad'],WM={},WMEAN={};
 for(const k of WK){const tx=wallTex(k,false);{const c=tx.image,d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=64){r+=d[i];g+=d[i+1];b+=d[i+2];n++}WMEAN[k]=[r/n,g/n,b/n]}WM[k]=M({vertexColors:true,map:tx,emissiveMap:wallTex(k,true),emissive:0xffffff,emissiveIntensity:0,side:THREE.DoubleSide});WM[k].onBeforeCompile=litWindows}
 const MAT={rail:M2({map:railT,transparent:true,alphaTest:.5}),cyc:M2({color:0x56585e,...PO(-1.8)}),cycp:M2({color:0x8c8a84,...PO(-1.8)}),buslane:M2({color:0xa8382e,...PO(-3)}),bike:M2({map:bikeT,transparent:true,alphaTest:.4,...PO(-5)}),bus:M2({map:busT,transparent:true,alphaTest:.4,...PO(-5)}),gdoorS:M2({vertexColors:true,map:groundTex('stock')}),gdoorR:M2({vertexColors:true,map:groundTex('red')}),wground:M2({map:groundTex('ware')}),cobble:M2({map:cobT,...PO(-2.2)}),shop:M2({map:shopTex}),shop1:M2({map:shopTexs[1]}),shop2:M2({map:shopTexs[2]}),shop3:M2({map:shopTexs[3]}),gpaint:M2({vertexColors:true,map:groundTex('paint')}),roofF:M2({map:roofFlat}),roofS:M2({map:roofSlate}),road:M2({map:asphalt,...PO(-2)}),pave:M({map:paving}),plaza:M2({map:plazaT,...PO(-1)}),grass:M2({map:grass,...PO(-1)}),play:M2({color:0x3a7a6a,...PO(-7)}),lawn:M2({map:grass,color:0xe0ecd0,...PO(-.6)})/* estate lawns: lifted from 0x9cae88, then 0xb2c49c, so they read green, not olive-black, from the air and at golden hour */,

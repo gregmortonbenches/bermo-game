@@ -180,3 +180,6 @@ Ground heights from the EA LiDAR bare-earth model (tools/lidar/terrain.py -> `te
 
 ## Ground decals on terrain (2026-11-28)
 The terrain shader only lifts vertices, so big flat triangles (park grass, ponds, paths, long road pieces) sank under the tessellated ground: the Southwark Park lake and its paths were invisible. `drape()` in r3d.js now splits any ground triangle that strays from the terrain by more than its layer tolerance (about +150k vertices, +1.8%). Footpaths moved up from y .03 to .044 so grass cannot poke through. New flat ground geometry should go through the `flatm` buckets. Still open: small ground slabs in `landmarks()` across the river and docks at the north edge may still clip.
+
+## Terrain lift: world space (2026-11-28)
+The first terrain shader added the height to each mesh's local y, so rotated parts (pedestrians' limbs, tree branches, other tilted meshes) flew sideways, and `litWindows` replaced the patch altogether, so textured walls stayed at river level while roofs and doors rose (floating roofs, sunk ground floors). `terrPatch(sh)` now lifts in world space after the view transform (shadows and sprites too). Any material with its own `onBeforeCompile` must call `terrPatch(sh)` first, unless it is meant to stay level (the skyline glass).
