@@ -131,6 +131,17 @@ const GB=()=>({p:new FA,n:new FA,u:new FA,c:new FA});let TINT=[1,1,1];
 function tri(G,a,b,c,n,ua,ub,uc){G.p.push(...a,...b,...c);G.n.push(...n,...n,...n);G.u.push(...ua,...ub,...uc);G.c.push(...TINT,...TINT,...TINT)}
 function quad(G,a,b,c,d,n,u0,u1,v0,v1){tri(G,a,b,c,n,[u0,v0],[u1,v0],[u1,v1]);tri(G,a,c,d,n,[u0,v0],[u1,v1],[u0,v1])}
 function mesh(G,mat,shadow=true,recv=true){if(!G.p.length)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(F32(G.p),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(F32(G.n),3));g.setAttribute('uv',new THREE.Float32BufferAttribute(F32(G.u),2));if(mat.vertexColors&&G.c.length==G.p.length)g.setAttribute('color',new THREE.Float32BufferAttribute(F32(G.c),3));g.computeBoundingSphere();/* static world: once the GPU has the data, drop the CPU copy (about half of ~250 MB of vertices); iPhones kill the tab near 1 GB */for(const k in g.attributes)g.attributes[k].onUpload(function(){this.array=null});const m=new THREE.Mesh(g,mat);m.castShadow=shadow;m.receiveShadow=recv;m.matrixAutoUpdate=false;scene.add(m);return m}
+/* ground decals (grass, water, paths, roads and markings) must follow the same terrain as the ground: it only lifts vertices, so a big flat triangle sank under it wherever the land rose between its corners (the park lake vanished). Split any triangle that strays more than its layer tolerance from the terrain. */
+/* per layer: [how far a decal may sink below the terrain, how far it may float above it], in metres; lower layers are held tight so they never poke through the ones on top */
+const DTOL={lawn:[.011,.024],grass:[.015,.014],plaza:[.019,.02],pond:[.008,.05],path:[.013,.07],cyc:[.018,.07],cycp:[.018,.07],road:[.022,.07],cobble:[.022,.07],quay:[.12,.8]};
+function drape(G,[dn,up]){if(!TERR.has)return G;const O=GB(),P=F32(G.p),N=F32(G.n),U=F32(G.u),C=F32(G.c);
+  const V=i=>[P[i*3],P[i*3+1],P[i*3+2],N[i*3],N[i*3+1],N[i*3+2],U[i*2],U[i*2+1],C[i*3],C[i*3+1],C[i*3+2],TH(P[i*3],P[i*3+2])];
+  const put=v=>{O.p.push(v[0],v[1],v[2]);O.n.push(v[3],v[4],v[5]);O.u.push(v[6],v[7]);O.c.push(v[8],v[9],v[10])};
+  const cut=(a,b,c,d)=>{const ab=hyp(b[0]-a[0],b[2]-a[2]),bc=hyp(c[0]-b[0],c[2]-b[2]),ca=hyp(a[0]-c[0],a[2]-c[2]),L=Math.max(ab,bc,ca);
+    if(L>2.5&&d<24){const n=Math.min(10,Math.max(2,Math.ceil(L/3)));let bad=false;/* below 5 m, only keep splitting where the miss is still large (steep banks) */const k=L>5?1:0;for(let i=0;i<=n&&!bad;i++)for(let j=0;j<=n-i;j++){const s=i/n,t=j/n,r=1-s-t;const e=TH(a[0]*r+b[0]*s+c[0]*t,a[2]*r+b[2]*s+c[2]*t)-(a[11]*r+b[11]*s+c[11]*t);if(k?e>dn||-e>up:e>.2){bad=true;break}}
+      if(bad){if(bc===L){const t=a;a=b;b=c;c=t}else if(ca===L){const t=c;c=b;b=a;a=t}/* a-b is now the longest side */const m=a.map((x,k)=>(x+b[k])/2);m[11]=TH(m[0],m[2]);cut(a,m,c,d+1);cut(m,b,c,d+1);return}}
+    put(a);put(b);put(c)};
+  for(let i=0,n=G.p.length/3;i<n;i+=3)cut(V(i),V(i+1),V(i+2),0);return O}
 const pl2=f=>{const o=[];for(let i=0;i<f.length;i+=2)o.push([f[i]*K,f[i+1]*K]);return o};
 function inPoly(x,z,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,zi]=P[i],[xj,zj]=P[j];if((zi>z)!=(zj>z)&&x<(xj-xi)*(z-zi)/(zj-zi)+xi)c=!c}return c}
 function flat(G,P,y,s){const v=P.map(p=>new THREE.Vector2(p[0],p[1]));let t;try{t=THREE.ShapeUtils.triangulateShape(v,[])}catch(e){return}for(const [a,b,c] of t)tri(G,[P[a][0],y,P[a][1]],[P[c][0],y,P[c][1]],[P[b][0],y,P[b][1]],[0,1,0],[P[a][0]/s,P[a][1]/s],[P[c][0]/s,P[c][1]/s],[P[b][0]/s,P[b][1]/s])}
@@ -205,7 +216,7 @@ function build(WD){
     if(rt-lt<.5&&rb-lb<.5)continue;flat(bk('lawn',x*K,y*K),[[lt*K,y*K],[rt*K,y*K],[rb*K,(y+h)*K],[lb*K,(y+h)*K]],.012,4)}R3DBG.lawnSmooth=sm}
   for(const f of WD.plaza){const P=pl2(f);flat(bk('plaza',P[0][0],P[0][1]),P,.025,4)}
   for(const f of WD.water){const P=pl2(f);let my=1e9;for(let i=1;i<f.length;i+=2)my=Math.min(my,f[i]);flat(bk(my>300?'pond':'water',P[0][0],P[0][1]),P,.04,10);ribbon(bk('quay',P[0][0],P[0][1]),[...P,P[0]],1.2,.06,0,false)}
-  for(const f of WD.foot){const P=pl2(f);ribbon(bk('path',P[0][0],P[0][1]),P,2.2,.03,0,true)}
+  for(const f of WD.foot){const P=pl2(f);ribbon(bk('path',P[0][0],P[0][1]),P,2.2,.044,0,true)}
   const COB=new Set(['Shad Thames','Gainsford Street','Curlew Street','Maltby Street','Ropewalk','Horselydown Lane','Lucey Way']);
   const roads=WD.r.map(r=>({p:pl2(r[0]),w:r[1]*K,c:r[2],nm:r[3]||'',cob:COB.has(r[3]),ow:r[4]||0,cyc:r[5]||0,pic:r[6]||0,bus:r[7]||0}));
   ROADSR=roads;
@@ -285,7 +296,7 @@ function build(WD){
     VD.deck.forEach((d,i)=>{const P=pl2(d),Hs=(VD.deckHoles[i]||[]).map(pl2);flatH(bk('under',P[0][0],P[0][1]),P,Hs,VH-.04,4,true)});
     for(const P of UND){flatH(bk('under',P[0][0],P[0][1]),P,[],VH-.7,4,true);let cx=0,cz=0;for(const p of P){cx+=p[0];cz+=p[1]}cx/=P.length;cz/=P.length;addBox(VV,1.2,.08,.3,cx,VH-.76,cz,'#fff6d8')}
     scene.add(vmesh(VV))}
-  for(const k in buckets){const [m]=k.split('|');const mat=m[0]=='w'&&WM[m.slice(1)]?WM[m.slice(1)]:MAT[m];const flatm=['cyc','cycp','buslane','bike','bus','cobble','grass','lawn','play','plaza','water','pond','quay','path','road','kerb','line','red','yel'].includes(m);const ms=mesh(buckets[k],mat,!flatm);if(m=='path'||m=='cycp'||m=='cyc'){ms.renderOrder=m=='path'?1:2;mat.depthWrite=false}/* footpaths and cycle tracks overlap in nearly the same plane: draw them in a fixed order (path, then cycle track) instead of letting the depth buffer pick, which flickered on phones */if(m=='water'||m=='pond')(WATERM=WATERM||[]).push(ms)}
+  for(const k in buckets){const [m]=k.split('|');const mat=m[0]=='w'&&WM[m.slice(1)]?WM[m.slice(1)]:MAT[m];const flatm=['cyc','cycp','buslane','bike','bus','cobble','grass','lawn','play','plaza','water','pond','quay','path','road','kerb','line','red','yel'].includes(m);let gb=buckets[k];if(flatm&&m!='water'){const n0=gb.p.length/3;gb=drape(gb,DTOL[m]||[.016,.05]);const d=R3DBG.drape||(R3DBG.drape={});d[m]=(d[m]||[0,0]);d[m][0]+=n0;d[m][1]+=gb.p.length/3}const ms=mesh(gb,mat,!flatm);if(m=='path'||m=='cycp'||m=='cyc'){ms.renderOrder=m=='path'?1:2;mat.depthWrite=false}/* footpaths and cycle tracks overlap in nearly the same plane: draw them in a fixed order (path, then cycle track) instead of letting the depth buffer pick, which flickered on phones */if(m=='water'||m=='pond')(WATERM=WATERM||[]).push(ms)}
   // trees, instanced per area so off-screen groups are skipped
   {const kx=BELLK.x,ky=BELLK.y,trees=WD.trees.filter(t=>!FB[(t[1]|0)*W+(t[0]|0)]&&!onRoadPx(t[0],t[1])&&hyp(t[0]-kx,t[1]-ky)>9),groups={};for(const t of trees){const k=tile(t[0]*K,t[1]*K);(groups[k]=groups[k]||[]).push(t)}
    // estate squares: a tree in a concrete planter in the middle of big bare paved spaces between blocks (open ground well clear of roads, buildings, lawns and existing trees). Own groups and own PRNG so the shared random stream (and so every other tree, blind and window) is unchanged
