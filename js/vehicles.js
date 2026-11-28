@@ -15,22 +15,23 @@ function unstick(c){const ca=Math.cos(c.a),sa=Math.sin(c.a),fc=(x,y)=>[7,10,13].
 function kerbSpot(sp,type){const e=EDGES[sp.e],[x,y,hx,hy]=edgePos(e,e.len>48?clamp(sp.s,24,e.len-24):e.len/2,sp.fw),off=e.w/2+2;/* keep kerb-parked cars out of junction mouths, where they'd sit across the crossing road's lane */return mkParked(type||['hatch','hatch','cab','van'][R()*4|0],x+hy*off,y-hx*off,Math.atan2(hy,hx))}
 function nearKerb(x,y,type,col){let best=null;for(const ei of MAIN){const e=EDGES[ei];if(hyp(e.p[0][0]-x,e.p[0][1]-y)>260)continue;for(let s=0;s<e.len;s+=4){const q=edgePos(e,s,true),d=hyp(q[0]-x,q[1]-y);if(!best||d<best[0])best=[d,q,e]}}
   if(!best)return mkParked(type,x,y,0,col);const [,q,e]=best,off=e.w/2+2,A=Math.atan2(q[3],q[2]);for(const [sd,al] of [[1,10],[-1,10],[1,-10],[-1,-10],[1,0],[-1,0]]){const X=q[0]+q[3]*off*sd+q[2]*al,Y=q[1]-q[2]*off*sd+q[3]*al;if(!hit(X,Y,3))return mkParked(type,X,Y,A,col)}return mkParked(type,q[0]+q[2]*14,q[1]+q[3]*14,A,col)}
-const TT=['hatch','hatch','cab','van','bus','scooter','ebike','courier','hatch','hatch','cab','hatch','ebike'];
-function seedTraffic(){cars=cars.filter(c=>c.own);for(let i=0;i<22;i++){const sp=spot(30,420);if(sp)cars.push(mkCar(TT[i%TT.length],sp))}for(let i=0;i<6;i++){const sp=spot(15,160);if(sp){const k=kerbSpot(sp);if(unstick(k))cars.push(k)}}}
+const TT=['hatch','hatch','cab','van','bus','scooter','ebike','courier','hatch','hatch','cab','bus','ebike'];
+function seedTraffic(){cars=cars.filter(c=>c.own);for(let i=0;i<22;i++){const c=trafficCar(i,30,420);if(c)cars.push(c)}for(let i=0;i<6;i++){const sp=spot(15,160);if(sp){const k=kerbSpot(sp);if(unstick(k))cars.push(k)}}}
 function ensureBike(){if(bike&&cars.includes(bike))return;const p=S.bx?{x:S.bx,y:S.by}:P.flat;bike=S.bx?mkParked('bike',S.bx,S.by,0,'#1fb5a8'):nearKerb(P.flat.x,P.flat.y,'bike','#1fb5a8');bike.own=1;cars.push(bike)}
 
 /* ---------- friendly traffic: drives on the left along the real street graph ---------- */
 const okDir=(e,fw)=>!e.ow||(e.ow==1)==fw;const laneOff=e=>e.ow?e.w*.1:e.w<=15?.6:Math.max(2.6,e.w/4);
 function aiStep(c,f){const e=EDGES[c.e],[x,y,hx,hy]=edgePos(e,c.s,c.fw),off=laneOff(e),tx=x+hy*off,ty=y-hx*off;
-  const fx=c.x+Math.cos(c.a)*(TYPES[c.type].w*.7),fy=c.y+Math.sin(c.a)*(TYPES[c.type].w*.7);let blkP=!pl.car&&(hyp(pl.x-fx,pl.y-fy)<5||hyp(pl.x-c.x,pl.y-c.y)<TYPES[c.type].w*.6),blk=blkP||(pl.car&&pl.car.type!='heli'&&hyp(pl.car.x-fx,pl.car.y-fy)<9);const blkC=!blkP&&blk;
+  const fx=c.x+Math.cos(c.a)*(TYPES[c.type].w*.7),fy=c.y+Math.sin(c.a)*(TYPES[c.type].w*.7);let blkP=!pl.car&&(hyp(pl.x-fx,pl.y-fy)<5||(c.rt!=null?busBeside(c,pl.x,pl.y):hyp(pl.x-c.x,pl.y-c.y)<TYPES[c.type].w*.6)),blk=blkP||(pl.car&&pl.car.type!='heli'&&hyp(pl.car.x-fx,pl.car.y-fy)<9);const blkC=!blkP&&blk;
   if(!blk)for(const q of peds)if(hyp(q.x-fx,q.y-fy)<4){blkP=blk=true;break}
   if(!blk)for(const q of specials)if(hyp(q.x-fx,q.y-fy)<4){blkP=blk=true;break}
   if(!blk)for(const o of cars)if(o!==c&&Math.abs(o.x-fx)<6&&Math.abs(o.y-fy)<6){blk=true;break}
   if(dog&&hyp(dog.x-fx,dog.y-fy)<6)blk=true;
-  if(blk&&(c.ghost<=0||blkP)){c.wait+=f;c.v=0;if(blkP){c.ghost=0;if(c.wait>90&&c.wait-f<=90&&hyp(pl.x-c.x,pl.y-c.y)<20)toast(['*Beep beep*','"After you, mate!"','The driver waits patiently.'][R()*3|0])}else if(blkC&&c.wait>30&&Math.cos(pl.car.a-c.a)<-.5&&okDir(e,!c.fw)){/* nose to nose with the player on a narrow street: the other driver politely turns round */c.fw=!c.fw;c.s=e.len-c.s;c.wait=0;if(hyp(pl.car.x-c.x,pl.car.y-c.y)<30)toast('The other driver gives you a wave and turns round.')}else if(c.wait>180){c.ghost=50;c.wait=0}}
+  if(blk&&(c.ghost<=0||blkP)){c.wait+=f;c.v=0;if(blkP){c.ghost=0;if(c.wait>90&&c.wait-f<=90&&hyp(pl.x-c.x,pl.y-c.y)<20)toast(['*Beep beep*','"After you, mate!"','The driver waits patiently.'][R()*3|0])}else if(blkC&&c.rt==null&&c.wait>30&&Math.cos(pl.car.a-c.a)<-.5&&okDir(e,!c.fw)){/* nose to nose with the player on a narrow street: the other driver politely turns round */c.fw=!c.fw;c.s=e.len-c.s;c.wait=0;if(hyp(pl.car.x-c.x,pl.car.y-c.y)<30)toast('The other driver gives you a wave and turns round.')}else if(c.wait>180){c.ghost=50;c.wait=0}}
+  else if(c.rt!=null&&busWait(c,f))c.wait=0;
   else{c.ghost-=f;c.wait=0;const sp=(c.type=='bus'?.75:c.type=='scooter'||c.type=='ebike'||c.type=='courier'?.8:.9)*f*.3;c.v=sp/f;c.s+=sp;
-    if(c.s>=e.len){const n=c.fw?e.b:e.a;let o=ADJ[n].filter(i=>i!==c.e&&!EDGES[i].off&&okDir(EDGES[i],EDGES[i].a===n));if(!o.length)o=ADJ[n].filter(i=>i!==c.e&&!EDGES[i].off);if(!o.length)o=[c.e];/* never drive onto roads that leave the map: turn round instead */const ne=o[R()*o.length|0];c.s=Math.min(c.s-e.len,EDGES[ne].len);c.fw=EDGES[ne].a===n;c.e=ne}}
-  const k=Math.min(1,.3*f);c.x+=(tx-c.x)*k;c.y+=(ty-c.y)*k;c.a+=angDiff(Math.atan2(hy,hx),c.a)*Math.min(1,.25*f)}
+    if(c.s>=e.len&&c.rt!=null)busTurn(c);else if(c.s>=e.len){const n=c.fw?e.b:e.a;let o=ADJ[n].filter(i=>i!==c.e&&!EDGES[i].off&&okDir(EDGES[i],EDGES[i].a===n));if(!o.length)o=ADJ[n].filter(i=>i!==c.e&&!EDGES[i].off);if(!o.length)o=[c.e];/* never drive onto roads that leave the map: turn round instead */const ne=o[R()*o.length|0];c.s=Math.min(c.s-e.len,EDGES[ne].len);c.fw=EDGES[ne].a===n;c.e=ne}}
+  const k=c.rt!=null&&hyp(tx-c.x,ty-c.y)>60?1:Math.min(1,.3*f);/* a bus coming back onto the map arrives at once, it doesn't slide there */c.x+=(tx-c.x)*k;c.y+=(ty-c.y)*k;c.a+=angDiff(Math.atan2(hy,hx),c.a)*Math.min(1,.25*f)}
 
 /* ---------- your own vehicles ---------- */
 function move(c,f){if(c.type=='heli'){c.x=clamp(c.x+Math.cos(c.a)*c.v*f,10,W-10);c.y=clamp(c.y+Math.sin(c.a)*c.v*f,10,H-10);return true}const T=TYPES[c.type],ca=Math.cos(c.a),sa=Math.sin(c.a),nx=c.x+ca*c.v*f,ny=c.y+sa*c.v*f,sg=Math.sign(c.v)||1;

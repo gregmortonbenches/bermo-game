@@ -212,3 +212,5 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 - Lines on one-way carriageways now stop where they run into a neighbouring one-way carriageway (`inPar` in r3d.js), which removes the crossed white lines on Tower Bridge Road, Jamaica Road and elsewhere.
 - Personal pins ('?', hearts, notes) show only near by, ordinary place pins within 250 px (giver pins unchanged at 420): far ones were specks showing through walls.
 - The lowest few degrees of the sky are now exactly the fog colour, so fully fogged tall blocks no longer stand out as pale slabs.
+
+2026-11-28 Real bus routes (asked for by Greg): routes 1, 42, 47, 78, 188, 381, C10 and P12 follow their stop order (bustimes.org, read that day), wait about 4 s at each stop and show number and destination blinds; the driver says the next stop. Approximations: only stops the game has are used; the 1 and 381 hop between Rotherhithe New Road and Canada Water (the real way is just off the map); roads between stops are the shortest way on the game's streets. Three buses are about at a time. Rebuild data with `python3 tools/bus/build.py`.

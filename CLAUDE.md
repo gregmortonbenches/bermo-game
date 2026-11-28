@@ -4,7 +4,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 
 ## Layout
 - `index.html`: page shell, styles, ordered `<script src="js/...">` tags.
-- `js/` classic scripts sharing ONE global scope. Load order: core, perf, vehicles, player, world, audio, life, radio, chute, jobs, crew, ui, render, main.
+- `js/` classic scripts sharing ONE global scope. Load order: core, perf, vehicles, busdata, buses, player, world, audio, life, radio, chute, jobs, crew, ui, render, main.
   - Top-level code must not use symbols from later files (functions are fine once called later). `node tools/hazard.mjs .` checks this (run from the repo root). `tools/tester.py` is the Playwright tester (`python3 tools/tester.py OUTDIR 6`, set CHROME inside; serve the repo with `python3 -m http.server 8768`).
   - 2D pixel units, 1.3 px = 1 m. r3d.js converts with K = 1/1.3.
 - `r3d.js`: ES module three.js renderer. `r3dtiles.js`: after build, cuts the big static meshes into ~360 m pieces, squeezes them (CompressionStream, on a helper thread) and keeps only the pieces near the camera on the GPU (`?nostream` turns it off; readout shows "map pieces"). Static world meshes can come and go from the scene: don't hold references to them. `world3d.json`, `data.json`, `mly.json`, `grid.png`, `map.png`, `bg.jpg`: data.
@@ -32,6 +32,9 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 ## Weather
 Live London weather from Open-Meteo is read in js/life.js (`WX`, `wxNow()`); it falls back to the old date rule if blocked. Test with `DBGWX`, `DBGH` (hour) and `DBGDOW` (day of week).
 The sun is the real one for the date and time (`sunAt()` in r3d.js, London 51.5 N): its height picks the sky colours via `sunHour()` and the old `AMB` table, and its direction sets the shadows. `DBGH` is the London hour on today's date; to test a season, fix the Date.
+
+## Buses
+- `js/busdata.js` is generated: `python3 tools/bus/build.py` (route stop lists live in that script, matched to `data.json` stops). `js/buses.js` drives them; a bus is a traffic car with `rt` (route index) and `li` (leg).
 
 ## Radio and parachute
 - `js/radio.js`: car radio from the Radio Browser directory (BAG menu, T = next station). Plays in a vehicle and as headphones on foot, silences the jazz.

@@ -52,7 +52,7 @@ function ctxAct(){if(!ready)return null;if(!pl.car&&pl.z>0){const c=nearOwn();re
 const BORROW={hatch:1,cab:1,van:1,bus:1};
 const DRV=['Maureen','Dev','Priya','Terry','Kwame','Siobhan','Marek','Joy','Femi','Lorraine','Tomasz','Rita'];
 function borrowDlg(c){c.v=0;const n=c.drv||(c.drv=DRV[R()*DRV.length|0]),T=TYPES[c.type];
-  if(c.type=='bus'){dlg('t',{who:'Bus driver',text:'"Morning! Sorry, love, I can\'t lend you the bus. Forty people are quite attached to it. The next one\'s along in eight minutes though."',opts:[['"Of course, sorry to bother you!"',()=>toast('"No bother at all. Mind the doors!"')]]});return}
+  if(c.type=='bus'){dlg('t',{who:'Bus driver',text:(c.rt!=null?`"Hiya! This is the ${c.bn} to ${c.bd}, next stop ${busNextStop(c)}. `:'"Morning! ')+'Sorry, love, I can\'t lend you the bus. Forty people are quite attached to it. The next one\'s along in eight minutes though."',opts:[['"Of course, sorry to bother you!"',()=>toast('"No bother at all. Mind the doors!"')]]});return}
   dlg('t',{who:n,text:`The window winds down. "Oh, hello! Everything alright?"`,opts:[
     ['"So sorry to bother you, could I possibly borrow your '+T.n+'?"',()=>{
       if(c.asked){dlg('t',{who:n,text:'"Ha, you again! Still a no, sorry. Still on my way to pick up my nan."',opts:[['"Totally understand, have a lovely day."',()=>toast(n+' gives you a cheery thumbs up.')]]});return}
