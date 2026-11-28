@@ -207,3 +207,8 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 - Under the parachute the camera now comes down with you (it used to stay at street level), a little further back so the canopy is in view.
 - Dual carriageways (Jamaica Road, Old Kent Road, Tower Bridge Road...) are detected from OpenStreetMap one-way pairs: red or yellow lines only on the kerb side, a solid white line by the central reservation, and a dashed lane line on two-lane one-way roads.
 - Zebra crossings are snapped to where the crossing is on the road and both Belisha beacons stand on the pavement (several used to sit in the middle of junctions); white zigzags either side, and centre and yellow lines stop there. 3 of 52 still could not be placed and stay where they were.
+
+## Road paint, pins and horizon (2026-11-28, play-test round 25)
+- Lines on one-way carriageways now stop where they run into a neighbouring one-way carriageway (`inPar` in r3d.js), which removes the crossed white lines on Tower Bridge Road, Jamaica Road and elsewhere.
+- Personal pins ('?', hearts, notes) show only near by, ordinary place pins within 250 px (giver pins unchanged at 420): far ones were specks showing through walls.
+- The lowest few degrees of the sky are now exactly the fog colour, so fully fogged tall blocks no longer stand out as pale slabs.
