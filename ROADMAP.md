@@ -192,3 +192,6 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 - Measured in the test browser (not on a phone): graphics memory about 770 -> 600 MB, page memory about 840 -> 770 MB once squeezing has finished; the first minute is about the same as before. Screenshots match the old renderer. Squeezing took 3 minutes in the slow test browser; a quick timing outside the game suggests seconds on a normal device.
 - Low quality now also holds fewer pieces (shorter view distance).
 - Still to do: build the world itself in pieces (load time is unchanged, about 6 s of building in the test browser), and Greg's real-phone numbers.
+
+## Birthday biplane (2026-11-28)
+- A Sopwith Camel-style biplane towing a "Happy Birthday Sam!" banner (Greg asked for it) circles at about 40 m, passing some 40 m from the player every 45 s or so; a one-time "Look up!" toast the first time it comes close. `biplaneStep` in r3d.js; `DBGPLANE=1` holds it still for tests. No engine sound.

@@ -1047,6 +1047,63 @@ let TRL=[],TRAINS=null;
 function trainMesh(){const g=new THREE.Group();for(let k=0;k<6;k++){const V=VB();addBox(V,19.4,2.7,2.8,0,1.65,0,'#eef0f2');addBox(V,19.4,.85,2.84,0,2.05,0,'#22344f');addBox(V,19.4,.35,2.84,0,.55,0,'#2a5aa8');addBox(V,19.6,.3,2.5,0,3.05,0,'#8a8e94');
     for(let d=-6.5;d<=6.5;d+=13)for(const s of[-1,1])addBox(V,1.3,2.1,.05,d,1.35,s*1.43,'#f2c82a');if(k==0||k==5)addBox(V,.1,2.4,2.6,k==0?9.75:-9.75,1.5,0,'#f2c82a');
     for(const w of[-6.5,6.5])addBox(V,2.2,.5,2.3,w,.25,0,'#2a2a2e');const m=vmesh(V,false);g.add(m)}return g}
+/* A biplane towing a birthday banner for Sam. It flies a 190 m circle at about 40 m whose near side passes some 40 m from you (the circle follows you slowly and turns a little each lap), so it comes low past you every 45 s or so */
+let BIP=null;
+/* modelled on the Sopwith Camel (1917): short stubby body, round rotary-engine cowling, the "hump" fairing in front of the cockpit, staggered wings with a flat top wing and a tilted-up lower one,
+   olive-khaki dope on top, clear linen underneath, RFC roundels and a blue-white-red striped rudder. About 5.7 m long and 8.5 m across */
+function biplaneMesh(){const g=new THREE.Group(),V=VB(),KH='#55573a',LN='#d9cfa8',WD='#6e4a2a',ST='#3a2c20';
+  /* body, tapering to the tail; the rear sides are linen as on the real thing */
+  addBox(V,1.7,.95,.95,1.35,0,0,KH);addBox(V,1.3,.82,.78,-.15,-.02,0,KH);addBox(V,1.3,.62,.56,-1.45,.02,0,LN);addBox(V,1.2,.42,.34,-2.7,.06,0,LN);
+  addBox(V,1.3,.08,.79,-.15,.39,0,KH);addBox(V,1.3,.08,.57,-1.45,.33,0,KH);addBox(V,1.2,.08,.35,-2.7,.27,0,KH);/* khaki decking on top */
+  addBox(V,.95,.26,.5,1.55,.58,0,KH);addBox(V,.4,.16,.42,2.05,.53,0,KH);/* the hump */
+  addBox(V,.55,.08,.62,.6,.5,0,ST);/* cockpit rim */
+  /* staggered wings: top wing ahead of the lower; khaki above, linen below */
+  addBox(V,1.45,.05,8.5,1.45,1.42,0,KH);addBox(V,1.45,.05,8.5,1.45,1.37,0,LN);
+  addBox(V,1.45,.06,2.6,-2.95,.12,0,KH);addBox(V,1.45,.04,2.6,-2.95,.07,0,LN);/* tailplane */
+  addBox(V,.55,.8,.06,-3.15,.55,0,KH);/* fin */addBox(V,.17,.95,.07,-3.5,.5,0,'#1f3f8f');addBox(V,.17,.95,.07,-3.67,.5,0,'#f2f0ea');addBox(V,.17,.95,.07,-3.84,.5,0,'#c42a2a');/* rudder stripes */
+  for(const z of [-3.6,3.6])for(const x of [1.95,.95])addBox(V,.07,1.35,.07,x,.74,z,WD);/* interplane struts */
+  for(const z of [-.35,.35])for(const x of [1.85,1.1])addBox(V,.06,.95,.06,x,.92,z,WD);/* cabane struts */
+  for(const z of [-.55,.55]){addBox(V,.07,1.05,.07,1.75,-.85,z,ST);addBox(V,.07,1.05,.07,1.05,-.85,z,ST)}addBox(V,.07,.07,1.3,1.4,-1.35,0,ST);/* undercarriage */
+  addWheel(V,.36,.12,1.4,-1.35,-.75,'#202022');addWheel(V,.36,.12,1.4,-1.35,.75,'#202022');addBox(V,.3,.1,.1,-3.1,-.25,0,ST);/* tail skid */
+  g.add(vmesh(V,false));
+  /* lower wing in two halves, each tilted up a few degrees (dihedral) */
+  for(const s of [1,-1]){const W=VB();addBox(W,1.4,.05,3.9,0,.025,s*2.15,KH);addBox(W,1.4,.04,3.9,0,-.02,s*2.15,LN);const m=vmesh(W,false);m.position.set(1.1,-.42,0);m.rotation.x=-s*.085;g.add(m)}
+  /* the round cowling of the rotary engine, open at the front */
+  const cw=new THREE.Mesh(new THREE.CylinderGeometry(.56,.52,.62,18,1,true),M2({color:0x9c9a94}));cw.rotation.z=-PI/2;cw.position.set(2.45,0,0);g.add(cw);
+  const face=new THREE.Mesh(new THREE.CircleGeometry(.5,18),M({color:0x2a2622}));face.rotation.y=PI/2;face.position.set(2.7,0,0);g.add(face);
+  /* two-bladed wooden propeller */
+  const P=VB();addBox(P,.08,2.6,.2,0,0,0,WD);addBox(P,.16,.2,.2,0,0,0,'#3a2a1c');const prop=vmesh(P,false);prop.position.set(2.84,0,0);g.add(prop);g.userData.prop=prop;
+  /* roundels: on the top wing, under the lower wing and on the body sides */
+  const rt=ctex(128,128,(c,w,h)=>{c.clearRect(0,0,w,h);for(const [r,col] of [[62,'#1f3f8f'],[42,'#f2f0ea'],[22,'#c42a2a']]){c.fillStyle=col;c.beginPath();c.arc(64,64,r,0,7);c.fill()}},false),
+    rm=M({map:rt,transparent:true,alphaTest:.5,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}),rg=new THREE.PlaneGeometry(1.05,1.05);
+  const disc=(x,y,z,rx,ry)=>{const m=new THREE.Mesh(rg,rm);m.position.set(x,y,z);m.rotation.set(rx,ry,0);g.add(m)};
+  for(const z of [-3,3]){disc(1.45,1.455,z,-PI/2,0);disc(1.1,-.47+Math.abs(z)*.085,z,PI/2,0)}
+  for(const s of [1,-1]){const m=new THREE.Mesh(rg,rm);m.scale.setScalar(.5);m.position.set(-1.45,.02,s*.3);g.add(m)}
+  /* pilot in a leather flying helmet */
+  const pilot=new THREE.Mesh(new THREE.SphereGeometry(.24,12,8),M({color:0x5a3a22}));pilot.position.set(.55,.72,0);g.add(pilot);
+  g.scale.setScalar(1.15);/* a touch bigger than life so it reads from the street */return g}
+function bannerMesh(){const tex=ctex(1024,128,(g,w,h)=>{g.fillStyle='#fffaf0';g.fillRect(0,0,w,h);g.fillStyle='#e8402a';g.fillRect(0,0,w,8);g.fillRect(0,h-8,w,8);
+    g.fillStyle='#d0243a';g.font='900 82px Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('Happy Birthday Sam!',w/2,h/2+4)},false);
+  const g=new THREE.Group(),geo=new THREE.PlaneGeometry(18,2.25,12,1),mat=M({map:tex});
+  /* two faces back to back, so the words read the right way round from either side */
+  const a=new THREE.Mesh(geo,mat),b=new THREE.Mesh(geo,mat);b.rotation.y=PI;g.add(a,b);g.userData.geo=geo;g.userData.p0=Float32Array.from(geo.attributes.position.array);return g}
+function biplaneStep(px,pz,dt){
+  if(!BIP){const plane=biplaneMesh(),ban=bannerMesh(),rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+    const rope=new THREE.Line(rg,new THREE.LineBasicMaterial({color:0x2a2420}));rope.frustumCulled=false;scene.add(plane,ban,rope);BIP={plane,ban,rope,cx:px+150,cz:pz,a:R()*PI*2,t:0,told:0}}
+  const B=BIP,Rr=190,Y=40,v=26;B.t+=dt;
+  const oa=B.t*.021,tx=px+Math.cos(oa)*150,tz=pz+Math.sin(oa)*150;B.cx+=(tx-B.cx)*Math.min(1,dt*.04);B.cz+=(tz-B.cz)*Math.min(1,dt*.04);if(hyp(tx-B.cx,tz-B.cz)>600){B.cx=tx;B.cz=tz}/* catches up after a long trip */
+  if(!window.DBGPLANE)B.a+=v/Rr*dt;/* tests can hold it still */const at=a=>[B.cx+Math.cos(a)*Rr,Y+Math.sin(a*2)*4,B.cz+Math.sin(a)*Rr];
+  const [x,y,z]=at(B.a),hd=B.a+PI/2;/* heading along the circle */
+  B.plane.position.set(x,y,z);B.plane.rotation.order='YXZ';B.plane.rotation.set(-.25,-hd,0);/* gently banked into the turn */
+  B.plane.userData.prop.rotation.x+=dt*60;
+  /* banner hangs on a 9 m rope behind, its middle one banner's half-length further back */
+  const back=a=>a-(9+9)/Rr,[bx,by,bz]=at(back(B.a)),bh=back(B.a)+PI/2;B.ban.position.set(bx,by-1.2,bz);B.ban.rotation.set(0,-bh,0);
+  {const g=B.ban.userData.geo,p=g.attributes.position.array,p0=B.ban.userData.p0;for(let i=0;i<p.length;i+=3){const u=(p0[i]+9)/18;p[i+2]=Math.sin(B.t*5-u*7)*.35*(1-u*.6)}g.attributes.position.needsUpdate=true}/* a ripple running down from the rope end */
+  const tail=new THREE.Vector3(-4.4,0,0).applyEuler(B.plane.rotation).add(B.plane.position),r=B.rope.geometry.attributes.position.array;
+  r[0]=tail.x;r[1]=tail.y;r[2]=tail.z;const fx=Math.cos(bh),fz=Math.sin(bh);r[3]=bx+fx*9;r[4]=by-1.2;r[5]=bz+fz*9;B.rope.geometry.attributes.position.needsUpdate=true;
+  /* the first time it comes close, a nudge to look up */
+  if(started&&!B.told&&hyp(x-px,z-pz)<90&&typeof toast=='function'){B.told=1;toast('Look up! A plane is flying past for Sam ✈')}
+  window.R3DBG&&(R3DBG.biplane=[x/K,z/K,y,hd])}
 function trainStep(p,dt){if(!TRL.length)return;const pxm=p.x*K,pzm=p.y*K;
   if(!TRAINS){TRAINS=[];for(let i=0;i<5;i++)TRAINS.push({});window.R3DBG&&(R3DBG.trains=TRAINS,R3DBG.trl=TRL)}
   for(const t of TRAINS){if(!t.ln||t.far>6){const near=TRL.filter(l=>{for(let i=0;i<l.P.length;i+=3)if(hyp(l.P[i][0]-pxm,l.P[i][1]-pzm)<450)return true;return false});if(!near.length)continue;t.ln=near[R()*near.length|0];t.dir=R()<.5?1:-1;t.s=R()*t.ln.L;t.v=11+R()*6;t.far=0;t.wait=0}
@@ -1142,6 +1199,7 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   if(window.DBGCAM){const d=window.DBGCAM;camera.position.set(d[0],d[1]+TH(d[0],d[2]),d[2]);camera.lookAt(d[3],d[4]+TH(d[3],d[5]),d[5]);if(window.DBGFOV&&camera.fov!==window.DBGFOV){camera.fov=window.DBGFOV;camera.updateProjectionMatrix()}}
   sun.position.set(px-60-SUNLOW*50,120-SUNLOW*62+th,pz-40+SUNLOW*22);sun.target.position.set(px,th,pz);
   if((lastLight-=dt)<=0){lastLight=.3;lighting(px,pz)}
+  biplaneStep(px,pz,dt);
   if(WATERM){waterT.offset.set(tSec*.01,tSec*.004);pondT.offset.set(tSec*.004,tSec*.002)}BELMAT.emissiveIntensity=(tSec%1)<.5?1.1:.05;BELMAT2.emissiveIntensity=(tSec*3%1)<.5?1.4:.05;
   {const rr=wxNow().rain;if(rr>.05&&!rain)makeRain();if(rain){rain.visible=rr>.05;rain.material.opacity=.16+.2*rr;rain.geometry.setDrawRange(0,2*Math.round(rain.userData.n*(.2+.8*rr)))}}
   if(rain){rain.position.set(px,0,pz);const a=rain.geometry.attributes.position.array;for(let i=0;i<a.length;i+=6){a[i+1]-=dt*22;a[i+4]-=dt*22;if(a[i+4]<0){const y=25+R()*5;a[i+1]=y;a[i+4]=y-.8}}rain.geometry.attributes.position.needsUpdate=true}
