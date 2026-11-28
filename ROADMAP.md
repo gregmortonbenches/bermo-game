@@ -186,3 +186,9 @@ The first terrain shader added the height to each mesh's local y, so rotated par
 
 ## 5. Phones and loading: first step (2026-11-28)
 `js/perf.js`: Bag menu has `Quality` (auto, high, low) and `Speed readout` (also `?perf` in the URL). Low: pixel ratio 1, no shadows, fog 65% so view is shorter, about half the people and traffic, and static chunks and instanced props beyond the fog are not drawn. Auto starts full and steps down after 5 s under 24 fps; next visit it tries one level higher. The readout notes when the last visit ended without closing properly (a likely memory kill). None of this lowers geometry memory. Still to do: Greg's real-phone numbers, slimmer geometry, map tiles, earlier playable start.
+
+## 5. Phones and loading: map in pieces (2026-11-28)
+- `r3dtiles.js`: once the world is built, the big static meshes are cut into ~360 m pieces (1257), packed smaller (normals 4 bytes, colours 16-bit) and squeezed in the background on a helper thread. Only the pieces within view distance are on the graphics card; pieces well behind you are dropped and unpacked again when you come back.
+- Measured in the test browser (not on a phone): graphics memory about 770 -> 600 MB, page memory about 840 -> 770 MB once squeezing has finished; the first minute is about the same as before. Screenshots match the old renderer. Squeezing took 3 minutes in the slow test browser; a quick timing outside the game suggests seconds on a normal device.
+- Low quality now also holds fewer pieces (shorter view distance).
+- Still to do: build the world itself in pieces (load time is unchanged, about 6 s of building in the test browser), and Greg's real-phone numbers.

@@ -1,5 +1,6 @@
 // GTA Bermondsey: three.js renderer. The game simulation (index.html) runs in map units (1.3 per metre); this draws it in 3D metres.
 import * as THREE from 'three';
+import * as TILES from './r3dtiles.js';
 const K=1/1.3,PI=Math.PI,R=Math.random,hyp=Math.hypot,cl=(v,a,b)=>v<a?a:v>b?b:v;
 const mob=matchMedia('(pointer:coarse)').matches;
 /* Visual terrain: the Environment Agency LiDAR bare-earth heights (world3d.json "terrain", 8 m cells, smoothed) lift every mesh in the vertex shader, so cars, people, the camera and shadows follow the ground while physics stays flat. Water materials flagged userData.noTerrain keep the river level. */
@@ -1192,6 +1193,8 @@ function render(f){const dt=f/60;tSec+=dt;seen=new Set();
   // remove anything no longer in the game
   for(const [o,m] of ENT)if(!seen.has(o)){scene.remove(m);ENT.delete(o);m.traverse(x=>{if(x.geometry&&!x.geometry.userData.shared)x.geometry.dispose();if(x.isSprite)x.material.dispose()})}
   platesUpdate(px,pz,dt);
+  /* fog is measured straight ahead, so towards the edges of a wide screen things further off still show */
+  {const th=Math.tan(camera.fov*PI/360)*camera.aspect;TILES.update(camera.position.x,camera.position.z,scene.fog.far*Math.max(1.1,.92*Math.sqrt(1+th*th)))}
   if((qT+=1)%15==0)cullFar();
   renderer.render(scene,camera)}
 const angD=(a,b)=>{let d=a-b;while(d>PI)d-=2*PI;while(d<-PI)d+=2*PI;return d};
@@ -1221,5 +1224,5 @@ function platesUpdate(px,pz,dt){if(!PLK){try{platesInit();window.R3DBG&&(R3DBG.p
     const g=s.cv.getContext('2d'),w=256,h=48;g.fillStyle='#f4f1e8';g.fillRect(0,0,w,h);g.strokeStyle='#161616';g.lineWidth=3;g.strokeRect(2,2,w-4,h-4);g.fillStyle='#141414';g.textAlign='center';g.textBaseline='middle';let fs=30;g.font='700 '+fs+'px Rubik, system-ui, sans-serif';const t=q[2].toUpperCase();while(g.measureText(t).width>w-20&&fs>12){fs-=2;g.font='700 '+fs+'px Rubik, system-ui, sans-serif'}g.fillText(t,w/2,h/2+1);s.tx.needsUpdate=true}
   for(const s of PLP)if(s.key!==null&&!want.includes(s.key)){s.g.visible=false;s.key=null}}
 /* one frame with culling off so every mesh uploads to the GPU now and releases its CPU copy (three.js only uploads what is drawn) */
-function warm(){const ms=[];scene.traverse(o=>{if(o.isMesh&&o.frustumCulled){o.frustumCulled=false;ms.push(o)}});try{renderer.render(scene,camera)}catch(e){console.warn('warm',e)}finally{for(const o of ms)o.frustumCulled=true}}
-window.R3={build,warm,quality,render,project,roofAt,fx:fxAdd,parked:()=>PKL,take:takeParked,info:()=>({...renderer.info.render,geo:renderer.info.memory.geometries,w:renderer.domElement.width,h:renderer.domElement.height})};
+function warm(spots=[]){TILES.split(scene);TILES.prime(spots.map(([x,y])=>[x*K,y*K]),650);const ms=[];scene.traverse(o=>{if(o.isMesh&&o.frustumCulled){o.frustumCulled=false;ms.push(o)}});try{renderer.render(scene,camera)}catch(e){console.warn('warm',e)}finally{for(const o of ms)o.frustumCulled=true}}
+window.R3={build,warm,quality,render,project,roofAt,fx:fxAdd,parked:()=>PKL,take:takeParked,info:()=>({...renderer.info.render,tiles:TILES.stats(),geo:renderer.info.memory.geometries,w:renderer.domElement.width,h:renderer.domElement.height})};

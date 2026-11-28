@@ -7,7 +7,7 @@ Wholesome GTA III-style 3D game set in real Bermondsey, London. three.js (0.160,
 - `js/` classic scripts sharing ONE global scope. Load order: core, perf, vehicles, player, world, audio, life, radio, chute, jobs, crew, ui, render, main.
   - Top-level code must not use symbols from later files (functions are fine once called later). `node tools/hazard.mjs .` checks this (run from the repo root). `tools/tester.py` is the Playwright tester (`python3 tools/tester.py OUTDIR 6`, set CHROME inside; serve the repo with `python3 -m http.server 8768`).
   - 2D pixel units, 1.3 px = 1 m. r3d.js converts with K = 1/1.3.
-- `r3d.js`: ES module three.js renderer. `world3d.json`, `data.json`, `mly.json`, `grid.png`, `map.png`, `bg.jpg`: data.
+- `r3d.js`: ES module three.js renderer. `r3dtiles.js`: after build, cuts the big static meshes into ~360 m pieces, squeezes them (CompressionStream, on a helper thread) and keeps only the pieces near the camera on the GPU (`?nostream` turns it off; readout shows "map pieces"). Static world meshes can come and go from the scene: don't hold references to them. `world3d.json`, `data.json`, `mly.json`, `grid.png`, `map.png`, `bg.jpg`: data.
 - `ROADMAP.md`: phases, what is done, what is parked.
 
 ## Gotchas
